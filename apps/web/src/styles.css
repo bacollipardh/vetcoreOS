@@ -28,3 +28,9 @@ section { margin-top: 28px; }
 ul { padding-left: 18px; margin: 12px 0 0; }
 @media (max-width: 860px) { .hero, .two, .three { grid-template-columns: 1fr; } .metrics { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .shell { width: min(100% - 20px, 1180px); padding-top: 16px; } .hero { padding: 18px; } .metrics { grid-template-columns: 1fr; } }
+.stacked { align-items: start; }
+.stacked > div { display: grid; gap: 14px; }
+.record-card { min-height: 210px; }
+.alert { display: inline-flex; border-radius: 999px; padding: 5px 9px; background: #fff1f2; color: #be123c; font-weight: 800; }
+.ok { display: inline-flex; border-radius: 999px; padding: 5px 9px; background: #ecfdf5; color: #047857; font-weight: 800; }
+code { border-radius: 6px; background: #eef2f7; padding: 2px 5px; }
