@@ -306,6 +306,61 @@ export const seedHospitalizations = [
   }
 ];
 
+export const seedDiagnostics = [
+  {
+    id: 'diag_001',
+    patientId: 'pat_001',
+    visitId: 'vis_001',
+    modality: 'X-ray',
+    title: 'Thoracic radiographs',
+    capturedAt: '2026-05-03T10:15:00.000Z',
+    status: 'reported',
+    storageType: 'external-pacs',
+    fileName: 'rex-thorax-2view.dcm',
+    thumbnailStatus: 'generated',
+    pacsLink: 'pacs://vetcore/rex-thorax-2view',
+    annotations: [
+      { label: 'Cardiac silhouette', note: 'Within expected range', region: 'thorax' }
+    ],
+    clinicalMedia: [],
+    aiScreening: [
+      { model: 'fracture-detection-late-phase', result: 'not-run', confidence: null }
+    ],
+    report: {
+      radiologist: 'Dr. Ilir Gashi',
+      impression: 'No acute thoracic abnormality detected.',
+      finalizedAt: '2026-05-03T13:00:00.000Z'
+    }
+  },
+  {
+    id: 'diag_002',
+    patientId: 'pat_002',
+    visitId: 'vis_002',
+    modality: 'Clinical photo',
+    title: 'Skin lesion follow-up',
+    capturedAt: '2026-04-22T12:00:00.000Z',
+    status: 'needs-review',
+    storageType: 'local-media',
+    fileName: 'mila-skin-lesion.jpg',
+    thumbnailStatus: 'queued',
+    pacsLink: '',
+    annotations: [
+      { label: 'Lesion edge', note: 'Mild erythema around scar', region: 'abdomen' }
+    ],
+    clinicalMedia: [
+      { type: 'photo', caption: 'Abdominal scar photo', sharedToRecord: true }
+    ],
+    aiScreening: [
+      { model: 'skin-lesion-classification-late-phase', result: 'queued', confidence: null }
+    ],
+    report: {
+      radiologist: '',
+      impression: '',
+      finalizedAt: null
+    }
+  }
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
@@ -313,7 +368,8 @@ export const clinicCoreSeed = {
   vaccinations: seedVaccinations,
   prescriptions: seedPrescriptions,
   surgeries: seedSurgeries,
-  hospitalizations: seedHospitalizations
+  hospitalizations: seedHospitalizations,
+  diagnostics: seedDiagnostics
 };
 
 function collection(state, key) {

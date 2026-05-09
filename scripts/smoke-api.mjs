@@ -73,6 +73,15 @@ if (!hospitalization.id || hospitalization.patientId !== patient.id || hospitali
 const hospitalizationSummary = await request('/clinic/hospitalizations/summary');
 if (hospitalizationSummary.counts.stays < 1 || hospitalizationSummary.featureCoverage.length !== 3) throw new Error('Hospitalization summary failed');
 
+const diagnostic = await request('/clinic/diagnostics', {
+  method: 'POST',
+  body: JSON.stringify({ patientId: patient.id, visitId: visit.id, modality: 'X-ray', title: 'Smoke imaging', fileName: 'smoke-study.dcm', pacsLink: 'pacs://smoke/study', annotations: 'Smoke annotation', impression: 'Smoke diagnostic impression' })
+});
+if (!diagnostic.id || diagnostic.patientId !== patient.id || diagnostic.annotations.length < 1) throw new Error('Diagnostic create failed');
+
+const diagnosticSummary = await request('/clinic/diagnostics/summary');
+if (diagnosticSummary.counts.diagnostics < 1 || diagnosticSummary.featureCoverage.length !== 3) throw new Error('Diagnostic summary failed');
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: 'PATCH',
   body: JSON.stringify({ status: 'signed', signedBy: 'Dr. Smoke', signedAt: new Date().toISOString() })

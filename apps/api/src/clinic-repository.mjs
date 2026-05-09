@@ -35,7 +35,8 @@ function normalizeState(state) {
     vaccinations: Array.isArray(state.vaccinations) ? state.vaccinations : [],
     prescriptions: Array.isArray(state.prescriptions) ? state.prescriptions : [],
     surgeries: Array.isArray(state.surgeries) ? state.surgeries : [],
-    hospitalizations: Array.isArray(state.hospitalizations) ? state.hospitalizations : []
+    hospitalizations: Array.isArray(state.hospitalizations) ? state.hospitalizations : [],
+    diagnostics: Array.isArray(state.diagnostics) ? state.diagnostics : []
   };
 }
 export async function readClinicState() {
@@ -361,6 +362,49 @@ export async function updateHospitalization(id, input) {
   state.hospitalizations[index] = { ...state.hospitalizations[index], ...input, id };
   await writeClinicState(state);
   return state.hospitalizations[index];
+}
+
+export async function createDiagnostic(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error('valid patientId is required');
+  const modality = normalizeText(input.modality, 'X-ray');
+  const annotationLabels = normalizeTags(input.annotations || input.annotation);
+  const diagnostic = {
+    id: makeId('diag'),
+    patientId: patient.id,
+    visitId: normalizeText(input.visitId) || null,
+    modality,
+    title: normalizeText(input.title, `${modality} study`),
+    capturedAt: normalizeText(input.capturedAt, nowIso()),
+    status: normalizeText(input.status, 'needs-review'),
+    storageType: normalizeText(input.storageType, 'local-media'),
+    fileName: normalizeText(input.fileName, `${patient.name}-${modality}`.toLowerCase().replace(/\s+/g, '-')),
+    thumbnailStatus: normalizeText(input.thumbnailStatus, 'queued'),
+    pacsLink: normalizeText(input.pacsLink),
+    annotations: annotationLabels.map((label) => ({ label, note: normalizeText(input.annotationNote), region: normalizeText(input.region, 'general') })),
+    clinicalMedia: normalizeText(input.mediaCaption)
+      ? [{ type: normalizeText(input.mediaType, 'photo'), caption: normalizeText(input.mediaCaption), sharedToRecord: true }]
+      : [],
+    aiScreening: [{ model: modality.toLowerCase().includes('photo') ? 'skin-lesion-classification-late-phase' : 'fracture-detection-late-phase', result: 'queued', confidence: null }],
+    report: {
+      radiologist: normalizeText(input.radiologist),
+      impression: normalizeText(input.impression),
+      finalizedAt: normalizeText(input.impression) ? nowIso() : null
+    }
+  };
+  state.diagnostics.push(diagnostic);
+  await writeClinicState(state);
+  return diagnostic;
+}
+
+export async function updateDiagnostic(id, input) {
+  const state = await readClinicState();
+  const index = state.diagnostics.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.diagnostics[index] = { ...state.diagnostics[index], ...input, id };
+  await writeClinicState(state);
+  return state.diagnostics[index];
 }
 
 function nextYearDate(dateText) {
