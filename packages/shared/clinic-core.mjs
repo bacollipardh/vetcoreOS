@@ -5,7 +5,7 @@ export const clinicCoreFeatureCoverage = [
   { range: 'F030-F045', area: 'Visits', description: 'Visit type, anamnesis, physical exam, diagnosis, treatment plan, procedures, signature and continuity.' }
 ];
 
-export const owners = [
+export const seedOwners = [
   {
     id: 'own_001',
     displayName: 'Arta Krasniqi',
@@ -43,7 +43,7 @@ export const owners = [
   }
 ];
 
-export const patients = [
+export const seedPatients = [
   {
     id: 'pat_001',
     name: 'Rex',
@@ -92,7 +92,7 @@ export const patients = [
   }
 ];
 
-export const visits = [
+export const seedVisits = [
   {
     id: 'vis_001',
     patientId: 'pat_001',
@@ -133,47 +133,62 @@ export const visits = [
   }
 ];
 
+export const clinicCoreSeed = {
+  owners: seedOwners,
+  patients: seedPatients,
+  visits: seedVisits
+};
+
+function collection(state, key) {
+  return Array.isArray(state?.[key]) ? state[key] : [];
+}
+
 export function moneyFromCents(cents) {
   return Number(cents || 0) / 100;
 }
 
-export function getOwnerById(id) {
-  return owners.find((owner) => owner.id === id) || null;
+export function getOwnerById(state, id) {
+  return collection(state, 'owners').find((owner) => owner.id === id) || null;
 }
 
-export function getPatientById(id) {
-  return patients.find((patient) => patient.id === id) || null;
+export function getPatientById(state, id) {
+  return collection(state, 'patients').find((patient) => patient.id === id) || null;
 }
 
-export function getVisitById(id) {
-  return visits.find((visit) => visit.id === id) || null;
+export function getVisitById(state, id) {
+  return collection(state, 'visits').find((visit) => visit.id === id) || null;
 }
 
-export function listPatients() {
-  return patients.map((patient) => ({
+export function listPatients(state) {
+  const visits = collection(state, 'visits');
+  return collection(state, 'patients').map((patient) => ({
     ...patient,
-    owners: patient.ownerIds.map(getOwnerById).filter(Boolean),
+    owners: patient.ownerIds.map((ownerId) => getOwnerById(state, ownerId)).filter(Boolean),
     lastVisit: visits.filter((visit) => visit.patientId === patient.id).sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0] || null
   }));
 }
 
-export function listOwners() {
-  return owners.map((owner) => ({
+export function listOwners(state) {
+  const patients = collection(state, 'patients');
+  return collection(state, 'owners').map((owner) => ({
     ...owner,
     patients: patients.filter((patient) => patient.ownerIds.includes(owner.id))
   }));
 }
 
-export function listVisits() {
-  return visits.map((visit) => ({
+export function listVisits(state) {
+  return collection(state, 'visits').map((visit) => ({
     ...visit,
-    patient: getPatientById(visit.patientId),
-    owner: getOwnerById(visit.ownerId),
+    patient: getPatientById(state, visit.patientId),
+    owner: getOwnerById(state, visit.ownerId),
     totalCents: visit.procedures.reduce((sum, procedure) => sum + procedure.costCents, 0)
   }));
 }
 
-export function getClinicCoreSummary() {
+export function getClinicCoreSummary(state) {
+  const patients = collection(state, 'patients');
+  const owners = collection(state, 'owners');
+  const visits = collection(state, 'visits');
   const criticalAllergyCount = patients.reduce((sum, patient) => sum + patient.allergies.filter((allergy) => allergy.severity === 'critical').length, 0);
   const signedVisits = visits.filter((visit) => visit.status === 'signed').length;
   const draftVisits = visits.filter((visit) => visit.status === 'draft').length;
@@ -190,6 +205,6 @@ export function getClinicCoreSummary() {
       criticalAllergies: criticalAllergyCount
     },
     openBalance: moneyFromCents(openBalanceCents),
-    nextBuildTargets: ['Persist EMR data in database', 'Add CRUD validation', 'Add patient detail timeline']
+    nextBuildTargets: ['Add database migrations', 'Add patient detail timeline', 'Add critical allergy banner across clinical screens']
   };
 }

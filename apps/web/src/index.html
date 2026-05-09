@@ -12,7 +12,7 @@
         <div>
           <p class="eyebrow">P1 Clinic Core MVP</p>
           <h1>VetCoreOS</h1>
-          <p class="lead">Bërthama klinike po nis me pronarë, pacientë dhe vizita të gjurmueshme ndaj `F001-F045`.</p>
+          <p class="lead">Bërthama klinike tani ka CRUD lokal për pronarë, pacientë dhe vizita të gjurmueshme ndaj `F001-F045`.</p>
         </div>
         <div class="metrics" id="metrics"></div>
       </section>
@@ -23,6 +23,37 @@
           <h2>Pacientet, pronaret dhe vizitat</h2>
         </div>
         <div class="grid three" id="clinic-summary"></div>
+        <div class="grid three forms">
+          <form class="card form-card" data-form="owner">
+            <h3>Shto pronar</h3>
+            <input name="displayName" placeholder="Emri i pronarit" required />
+            <input name="phone" placeholder="Telefoni" />
+            <input name="email" placeholder="Email" />
+            <input name="city" placeholder="Qyteti" />
+            <button type="submit">Ruaj pronarin</button>
+          </form>
+          <form class="card form-card" data-form="patient">
+            <h3>Shto pacient</h3>
+            <input name="name" placeholder="Emri i kafshes" required />
+            <select name="ownerId" id="owner-options" required></select>
+            <input name="species" placeholder="Specia" value="Dog" />
+            <input name="breed" placeholder="Raca" />
+            <input name="microchip" placeholder="Microchip" />
+            <input name="allergy" placeholder="Alergji kritike" />
+            <button type="submit">Ruaj pacientin</button>
+          </form>
+          <form class="card form-card" data-form="visit">
+            <h3>Shto vizite</h3>
+            <select name="patientId" id="patient-options" required></select>
+            <input name="visitType" placeholder="Tipi i vizites" value="Consultation" />
+            <input name="clinician" placeholder="Veterineri" value="Dr. Demo" />
+            <textarea name="anamnesis" placeholder="Anamneza"></textarea>
+            <input name="procedureName" placeholder="Procedura" />
+            <input name="procedureCost" type="number" step="0.01" placeholder="Kosto EUR" />
+            <button type="submit">Ruaj viziten</button>
+          </form>
+        </div>
+        <p class="form-status" id="form-status"></p>
         <div class="grid two stacked" id="clinic-records"></div>
       </section>
 

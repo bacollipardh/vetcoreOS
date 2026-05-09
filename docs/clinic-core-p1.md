@@ -1,6 +1,6 @@
 # P1 Clinic Core MVP
 
-Status: started
+Status: in progress
 
 Feature coverage:
 
@@ -10,19 +10,26 @@ Feature coverage:
 
 ## Current implementation
 
-The first P1 slice is intentionally dependency-light:
+The P1 slice now has local CRUD backed by JSON storage:
 
-- Demo clinical data lives in `packages/shared/clinic-core.mjs`.
+- Seed clinical data lives in `packages/shared/clinic-core.mjs`.
+- Runtime data is written to `apps/api/data/clinic-core.json` and ignored by Git.
 - API exposes:
   - `GET /clinic/summary`
   - `GET /clinic/owners`
+  - `POST /clinic/owners`
+  - `PATCH /clinic/owners/:id`
   - `GET /clinic/patients`
+  - `POST /clinic/patients`
+  - `PATCH /clinic/patients/:id`
   - `GET /clinic/visits`
-- Web shell renders clinic core cards from the API.
-- Smoke checks validate all clinical endpoints.
+  - `POST /clinic/visits`
+  - `PATCH /clinic/visits/:id`
+- Web shell renders clinic core records and includes forms to create owners, patients and visits.
+- Smoke checks validate create/update flows across all clinical resources.
 
 ## Next P1 slice
 
-- Add persistent storage and migrations.
-- Add create/update forms for patients, owners and visits.
-- Add patient detail timeline and critical allergy banner across clinical screens.
+- Add structured validation with user-friendly error payloads.
+- Add patient detail route with clinical timeline.
+- Add persistent database schema and migrations when the product stack is selected.
