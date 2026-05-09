@@ -1,0 +1,19 @@
+{
+  "name": "vetcoreos",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "VetCoreOS pan-European veterinary SaaS built gradually from the full feature inventory.",
+  "scripts": {
+    "dev:api": "node apps/api/src/main.mjs",
+    "dev:web": "node apps/web/src/server.mjs",
+    "verify": "node scripts/verify.mjs"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}
