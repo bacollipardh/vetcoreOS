@@ -52,3 +52,4 @@ if (finalSummary.counts.patients !== initialSummary.counts.patients + 1) throw n
 server.close();
 await rm(new URL('../apps/api/data/clinic-core.json', import.meta.url), { force: true });
 console.log('API CRUD smoke checks passed.');
+

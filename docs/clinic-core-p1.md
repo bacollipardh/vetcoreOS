@@ -25,11 +25,12 @@ The P1 slice now has local CRUD backed by JSON storage:
   - `GET /clinic/visits`
   - `POST /clinic/visits`
   - `PATCH /clinic/visits/:id`
-- Web shell renders clinic core records and includes forms to create owners, patients and visits.
-- Smoke checks validate create/update flows across all clinical resources.
+- Web shell renders clinic core records, patient detail timelines, critical allergy banners, visit signing, amendments, and forms to create owners, patients and visits.
+- Smoke checks validate create/update flows, visit signing, and amendment persistence across all clinical resources.
 
 ## Next P1 slice
 
 - Add structured validation with user-friendly error payloads.
 - Add patient detail route with clinical timeline.
 - Add persistent database schema and migrations when the product stack is selected.
+

@@ -90,3 +90,8 @@ ul { padding-left: 18px; margin: 12px 0 0; }
 .patient-row.selected { border-color: #176858; box-shadow: 0 0 0 3px rgba(23, 104, 88, 0.12); }
 .empty-detail { border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; color: #64748b; padding: 14px; }
 @media (max-width: 620px) { .detail-grid, .record-actions { grid-template-columns: 1fr; flex-direction: column; align-items: stretch; } }
+.visit-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; align-items: center; }
+.amendments { display: grid; gap: 6px; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+.amendments p { margin: 0; color: #475569; font-size: 13px; }
+.form-divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
+@media (max-width: 620px) { .visit-actions { justify-content: flex-start; } }
