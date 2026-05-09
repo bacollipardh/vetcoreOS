@@ -1,9 +1,10 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const port = Number(process.env.PORT || 4200);
-const root = new URL('.', import.meta.url).pathname;
+const root = fileURLToPath(new URL('.', import.meta.url));
 const contentTypes = new Map([
   ['.html', 'text/html; charset=utf-8'],
   ['.css', 'text/css; charset=utf-8'],
@@ -12,7 +13,7 @@ const contentTypes = new Map([
 
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host}`);
-  const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
+  const pathname = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
   const filePath = join(root, pathname);
 
   try {
