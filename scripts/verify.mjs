@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { vetCoreBlueprint } from '../packages/shared/vetcore-blueprint.mjs';
 import { clinicCoreFeatureCoverage, clinicCoreSeed, getClinicCoreSummary, listOwners, listPatients, listVisits } from '../packages/shared/clinic-core.mjs';
 import { getPrescriptionSummary, prescriptionFeatureCoverage } from '../packages/shared/prescriptions.mjs';
+import { getSurgerySummary, surgeryFeatureCoverage } from '../packages/shared/surgeries.mjs';
 import { getVaccinationSummary, vaccinationFeatureCoverage } from '../packages/shared/vaccinations.mjs';
 
 const inventory = await readFile(new URL('../docs/vetcore-feature-inventory.md', import.meta.url), 'utf8');
@@ -34,10 +35,17 @@ for (const range of ['F056-F058', 'F059-F063', 'F064-F067']) {
   }
 }
 
+for (const range of ['F068-F069', 'F070-F073', 'F074-F077']) {
+  if (!surgeryFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P2 surgery coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
 const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
 const prescriptionSummary = getPrescriptionSummary(clinicCoreSeed);
-if (summary.counts.patients < 2 || summary.counts.owners < 2 || summary.counts.visits < 2 || vaccinationSummary.counts.vaccinations < 2 || prescriptionSummary.counts.prescriptions < 2) {
+const surgerySummary = getSurgerySummary(clinicCoreSeed);
+if (summary.counts.patients < 2 || summary.counts.owners < 2 || summary.counts.visits < 2 || vaccinationSummary.counts.vaccinations < 2 || prescriptionSummary.counts.prescriptions < 2 || surgerySummary.counts.surgeries < 2) {
   throw new Error('Clinic core seed data is incomplete');
 }
 
@@ -58,4 +66,5 @@ console.log(`Verified P1 clinic core seed with ${summary.counts.patients} patien
 
 console.log(`Verified P2 vaccination seed with ${vaccinationSummary.counts.vaccinations} vaccines and ${vaccinationSummary.counts.overdue} overdue alerts.`);
 console.log(`Verified P2 prescription seed with ${prescriptionSummary.counts.prescriptions} prescriptions and ${prescriptionSummary.counts.unsignedControlled} controlled alerts.`);
+console.log(`Verified P2 surgery seed with ${surgerySummary.counts.surgeries} surgeries and ${surgerySummary.alerts.length} alerts.`);
 

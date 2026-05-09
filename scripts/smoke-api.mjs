@@ -55,6 +55,15 @@ if (!prescription.id || prescription.calculatedDoseMg <= 0) throw new Error('Pre
 const prescriptionSummary = await request('/clinic/prescriptions/summary');
 if (prescriptionSummary.counts.prescriptions < 1 || prescriptionSummary.featureCoverage.length !== 3) throw new Error('Prescription summary failed');
 
+const surgery = await request('/clinic/surgeries', {
+  method: 'POST',
+  body: JSON.stringify({ patientId: patient.id, visitId: visit.id, procedureName: 'Smoke surgery', surgeon: 'Dr. Smoke', estimate: 75, consentStatus: 'pending', checklist: 'Fasting confirmed, Consent signed' })
+});
+if (!surgery.id || surgery.patientId !== patient.id || surgery.preOpChecklist.length < 2) throw new Error('Surgery create failed');
+
+const surgerySummary = await request('/clinic/surgeries/summary');
+if (surgerySummary.counts.surgeries < 1 || surgerySummary.featureCoverage.length !== 3) throw new Error('Surgery summary failed');
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: 'PATCH',
   body: JSON.stringify({ status: 'signed', signedBy: 'Dr. Smoke', signedAt: new Date().toISOString() })

@@ -207,12 +207,62 @@ export const seedPrescriptions = [
   }
 ];
 
+export const seedSurgeries = [
+  {
+    id: 'surg_001',
+    patientId: 'pat_001',
+    visitId: 'vis_001',
+    procedureName: 'Dental cleaning under anesthesia',
+    scheduledAt: '2026-05-20T08:00:00.000Z',
+    surgeon: 'Dr. Elira Hoxha',
+    status: 'planned',
+    estimateCents: 18500,
+    consentStatus: 'signed',
+    preOpChecklist: [
+      { label: 'Fasting confirmed', done: true },
+      { label: 'Bloodwork reviewed', done: true },
+      { label: 'Anesthesia risk discussed', done: true },
+      { label: 'IV catheter placed', done: false }
+    ],
+    anesthesiaRecord: [
+      { minute: 0, heartRate: 92, respiration: 18, temperatureC: 38.2, note: 'Induction started' },
+      { minute: 5, heartRate: 88, respiration: 16, temperatureC: 38.1, note: 'Stable' }
+    ],
+    drugsGiven: [{ name: 'Propofol', amount: '4 mg/kg', atMinute: 0 }],
+    recoveryStatus: 'not-started',
+    dischargeInstructions: '',
+    followUpDueAt: '2026-05-27'
+  },
+  {
+    id: 'surg_002',
+    patientId: 'pat_002',
+    visitId: 'vis_002',
+    procedureName: 'Spay scar revision',
+    scheduledAt: '2026-05-12T10:30:00.000Z',
+    surgeon: 'Dr. Nora Berisha',
+    status: 'recovery',
+    estimateCents: 9500,
+    consentStatus: 'pending',
+    preOpChecklist: [
+      { label: 'Fasting confirmed', done: true },
+      { label: 'Consent signed', done: false },
+      { label: 'Pain plan prepared', done: true }
+    ],
+    anesthesiaRecord: [{ minute: 0, heartRate: 128, respiration: 22, temperatureC: 38.0, note: 'Light sedation' }],
+    drugsGiven: [{ name: 'Meloxicam', amount: '0.05 mg/kg', atMinute: 0 }],
+    recoveryStatus: 'monitoring',
+    dischargeInstructions: 'Keep collar on for 7 days. Check incision daily.',
+    followUpDueAt: '2026-05-19'
+  }
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
   visits: seedVisits,
   vaccinations: seedVaccinations,
-  prescriptions: seedPrescriptions
+  prescriptions: seedPrescriptions,
+  surgeries: seedSurgeries
 };
 
 function collection(state, key) {

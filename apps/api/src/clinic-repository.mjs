@@ -33,7 +33,8 @@ function normalizeState(state) {
     patients: Array.isArray(state.patients) ? state.patients : [],
     visits: Array.isArray(state.visits) ? state.visits : [],
     vaccinations: Array.isArray(state.vaccinations) ? state.vaccinations : [],
-    prescriptions: Array.isArray(state.prescriptions) ? state.prescriptions : []
+    prescriptions: Array.isArray(state.prescriptions) ? state.prescriptions : [],
+    surgeries: Array.isArray(state.surgeries) ? state.surgeries : []
   };
 }
 export async function readClinicState() {
@@ -265,6 +266,46 @@ export async function updatePrescription(id, input) {
   state.prescriptions[index] = { ...state.prescriptions[index], ...input, id };
   await writeClinicState(state);
   return state.prescriptions[index];
+}
+
+export async function createSurgery(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error('valid patientId is required');
+  const checklist = normalizeTags(input.checklist || input.preOpChecklist).map((label) => ({ label, done: false }));
+  const surgery = {
+    id: makeId('surg'),
+    patientId: patient.id,
+    visitId: normalizeText(input.visitId) || null,
+    procedureName: normalizeText(input.procedureName, 'Surgery'),
+    scheduledAt: normalizeText(input.scheduledAt, nowIso()),
+    surgeon: normalizeText(input.surgeon, 'Dr. Demo'),
+    status: normalizeText(input.status, 'planned'),
+    estimateCents: Math.round(Number(input.estimate || 0) * 100),
+    consentStatus: normalizeText(input.consentStatus, 'pending'),
+    preOpChecklist: checklist.length ? checklist : [
+      { label: 'Fasting confirmed', done: false },
+      { label: 'Consent signed', done: false },
+      { label: 'Anesthesia risk discussed', done: false }
+    ],
+    anesthesiaRecord: [],
+    drugsGiven: [],
+    recoveryStatus: normalizeText(input.recoveryStatus, 'not-started'),
+    dischargeInstructions: normalizeText(input.dischargeInstructions),
+    followUpDueAt: normalizeText(input.followUpDueAt) || null
+  };
+  state.surgeries.push(surgery);
+  await writeClinicState(state);
+  return surgery;
+}
+
+export async function updateSurgery(id, input) {
+  const state = await readClinicState();
+  const index = state.surgeries.findIndex((surgery) => surgery.id === id);
+  if (index === -1) return null;
+  state.surgeries[index] = { ...state.surgeries[index], ...input, id };
+  await writeClinicState(state);
+  return state.surgeries[index];
 }
 
 function nextYearDate(dateText) {
