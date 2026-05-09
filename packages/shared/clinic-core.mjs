@@ -256,13 +256,64 @@ export const seedSurgeries = [
   }
 ];
 
+export const seedHospitalizations = [
+  {
+    id: 'hosp_001',
+    patientId: 'pat_001',
+    visitId: 'vis_001',
+    stayType: 'hospitalization',
+    cage: 'Ward A / Cage 3',
+    admittedAt: '2026-05-20T11:30:00.000Z',
+    dischargePlannedAt: '2026-05-21T15:00:00.000Z',
+    status: 'in-care',
+    acuity: 'post-op',
+    ownerVisibleStatus: 'Recovering well after anesthesia',
+    photoUpdates: [{ at: '2026-05-20T14:00:00.000Z', caption: 'Resting after dental cleaning', sharedToPortal: true }],
+    treatmentSheet: [
+      { time: '2026-05-20T12:00:00.000Z', task: 'Pain score and temperature', intervalHours: 4, completed: true },
+      { time: '2026-05-20T16:00:00.000Z', task: 'Offer small meal', intervalHours: 0, completed: false }
+    ],
+    vitals: [
+      { at: '2026-05-20T12:00:00.000Z', temperatureC: 38.1, pulseBpm: 90, respirationRpm: 20, painScore: 2 },
+      { at: '2026-05-20T14:00:00.000Z', temperatureC: 38.0, pulseBpm: 86, respirationRpm: 18, painScore: 1 }
+    ],
+    shiftNotes: [
+      { at: '2026-05-20T14:15:00.000Z', shift: 'Day', author: 'Tech Ana', note: 'Awake, calm, IV site clean.' }
+    ],
+    dischargePlan: ['Confirm eating before discharge', 'Send dental home-care instructions', 'Book 7-day follow-up']
+  },
+  {
+    id: 'hosp_002',
+    patientId: 'pat_002',
+    visitId: 'vis_002',
+    stayType: 'boarding',
+    cage: 'Cat Room / Condo 2',
+    admittedAt: '2026-05-09T09:00:00.000Z',
+    dischargePlannedAt: '2026-05-12T18:00:00.000Z',
+    status: 'boarding',
+    acuity: 'routine',
+    ownerVisibleStatus: 'Settled in cat condo',
+    photoUpdates: [{ at: '2026-05-09T13:00:00.000Z', caption: 'Eating normally', sharedToPortal: true }],
+    treatmentSheet: [
+      { time: '2026-05-09T18:00:00.000Z', task: 'Evening feeding', intervalHours: 24, completed: false },
+      { time: '2026-05-10T09:00:00.000Z', task: 'Litter and comfort check', intervalHours: 12, completed: false }
+    ],
+    vitals: [],
+    shiftNotes: [
+      { at: '2026-05-09T13:10:00.000Z', shift: 'Day', author: 'Tech Lira', note: 'Hiding first hour, then ate wet food.' }
+    ],
+    dischargePlan: ['Confirm owner pickup time', 'Prepare boarding invoice']
+  }
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
   visits: seedVisits,
   vaccinations: seedVaccinations,
   prescriptions: seedPrescriptions,
-  surgeries: seedSurgeries
+  surgeries: seedSurgeries,
+  hospitalizations: seedHospitalizations
 };
 
 function collection(state, key) {

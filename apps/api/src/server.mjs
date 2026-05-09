@@ -1,10 +1,11 @@
 import http from 'node:http';
 import { vetCoreBlueprint } from '../../../packages/shared/vetcore-blueprint.mjs';
 import { getClinicCoreSummary, listOwners, listPatients, listVisits } from '../../../packages/shared/clinic-core.mjs';
+import { getHospitalizationSummary, listHospitalizations } from '../../../packages/shared/hospitalizations.mjs';
 import { getPrescriptionSummary, listPrescriptions } from '../../../packages/shared/prescriptions.mjs';
 import { getSurgerySummary, listSurgeries } from '../../../packages/shared/surgeries.mjs';
 import { getVaccinationSummary, listVaccinations } from '../../../packages/shared/vaccinations.mjs';
-import { createOwner, createPatient, createPrescription, createSurgery, createVaccination, createVisit, readClinicState, updateOwner, updatePatient, updatePrescription, updateSurgery, updateVaccination, updateVisit } from './clinic-repository.mjs';
+import { createHospitalization, createOwner, createPatient, createPrescription, createSurgery, createVaccination, createVisit, readClinicState, updateHospitalization, updateOwner, updatePatient, updatePrescription, updateSurgery, updateVaccination, updateVisit } from './clinic-repository.mjs';
 
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, {
@@ -104,6 +105,16 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      if (request.method === 'GET' && url.pathname === '/clinic/hospitalizations/summary') {
+        await sendClinicPayload(response, (state) => getHospitalizationSummary(state));
+        return;
+      }
+
+      if (request.method === 'GET' && url.pathname === '/clinic/hospitalizations') {
+        await sendClinicPayload(response, (state) => ({ items: listHospitalizations(state) }));
+        return;
+      }
+
       if (request.method === 'POST' && url.pathname === '/clinic/owners') {
         sendJson(response, 201, await createOwner(await readBody(request)));
         return;
@@ -131,6 +142,11 @@ export function createVetCoreApiServer() {
 
       if (request.method === 'POST' && url.pathname === '/clinic/surgeries') {
         sendJson(response, 201, await createSurgery(await readBody(request)));
+        return;
+      }
+
+      if (request.method === 'POST' && url.pathname === '/clinic/hospitalizations') {
+        sendJson(response, 201, await createHospitalization(await readBody(request)));
         return;
       }
 
@@ -176,9 +192,16 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      const hospitalizationId = matchId(url.pathname, '/clinic/hospitalizations');
+      if (request.method === 'PATCH' && hospitalizationId) {
+        const stay = await updateHospitalization(hospitalizationId, await readBody(request));
+        sendJson(response, stay ? 200 : 404, stay || { error: 'Hospitalization not found' });
+        return;
+      }
+
       sendJson(response, 404, {
         error: 'Not found',
-        endpoints: ['/health', '/blueprint', '/clinic/summary', '/clinic/owners', '/clinic/patients', '/clinic/visits', '/clinic/vaccinations', '/clinic/prescriptions', '/clinic/surgeries']
+        endpoints: ['/health', '/blueprint', '/clinic/summary', '/clinic/owners', '/clinic/patients', '/clinic/visits', '/clinic/vaccinations', '/clinic/prescriptions', '/clinic/surgeries', '/clinic/hospitalizations']
       });
     } catch (error) {
       sendJson(response, 400, { error: error.message || 'Bad request' });

@@ -34,7 +34,8 @@ function normalizeState(state) {
     visits: Array.isArray(state.visits) ? state.visits : [],
     vaccinations: Array.isArray(state.vaccinations) ? state.vaccinations : [],
     prescriptions: Array.isArray(state.prescriptions) ? state.prescriptions : [],
-    surgeries: Array.isArray(state.surgeries) ? state.surgeries : []
+    surgeries: Array.isArray(state.surgeries) ? state.surgeries : [],
+    hospitalizations: Array.isArray(state.hospitalizations) ? state.hospitalizations : []
   };
 }
 export async function readClinicState() {
@@ -306,6 +307,60 @@ export async function updateSurgery(id, input) {
   state.surgeries[index] = { ...state.surgeries[index], ...input, id };
   await writeClinicState(state);
   return state.surgeries[index];
+}
+
+export async function createHospitalization(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error('valid patientId is required');
+  const tasks = normalizeTags(input.tasks || input.treatmentSheet).map((task, index) => ({
+    time: new Date(Date.now() + index * 60 * 60 * 1000).toISOString(),
+    task,
+    intervalHours: 0,
+    completed: false
+  }));
+  const vitals = Number(input.temperatureC || input.pulseBpm || input.respirationRpm || input.painScore)
+    ? [{
+        at: nowIso(),
+        temperatureC: Number(input.temperatureC || 0),
+        pulseBpm: Number(input.pulseBpm || 0),
+        respirationRpm: Number(input.respirationRpm || 0),
+        painScore: Number(input.painScore || 0)
+      }]
+    : [];
+  const stay = {
+    id: makeId('hosp'),
+    patientId: patient.id,
+    visitId: normalizeText(input.visitId) || null,
+    stayType: normalizeText(input.stayType, 'hospitalization'),
+    cage: normalizeText(input.cage, 'Unassigned'),
+    admittedAt: normalizeText(input.admittedAt, nowIso()),
+    dischargePlannedAt: normalizeText(input.dischargePlannedAt) || null,
+    status: normalizeText(input.status, 'in-care'),
+    acuity: normalizeText(input.acuity, 'routine'),
+    ownerVisibleStatus: normalizeText(input.ownerVisibleStatus, 'Admitted and monitored'),
+    photoUpdates: normalizeText(input.photoCaption)
+      ? [{ at: nowIso(), caption: normalizeText(input.photoCaption), sharedToPortal: true }]
+      : [],
+    treatmentSheet: tasks.length ? tasks : [{ time: nowIso(), task: 'Initial nursing check', intervalHours: 0, completed: false }],
+    vitals,
+    shiftNotes: normalizeText(input.shiftNote)
+      ? [{ at: nowIso(), shift: normalizeText(input.shift, 'Day'), author: normalizeText(input.author, 'Care team'), note: normalizeText(input.shiftNote) }]
+      : [],
+    dischargePlan: normalizeTags(input.dischargePlan)
+  };
+  state.hospitalizations.push(stay);
+  await writeClinicState(state);
+  return stay;
+}
+
+export async function updateHospitalization(id, input) {
+  const state = await readClinicState();
+  const index = state.hospitalizations.findIndex((stay) => stay.id === id);
+  if (index === -1) return null;
+  state.hospitalizations[index] = { ...state.hospitalizations[index], ...input, id };
+  await writeClinicState(state);
+  return state.hospitalizations[index];
 }
 
 function nextYearDate(dateText) {

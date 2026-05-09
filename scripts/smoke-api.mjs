@@ -64,6 +64,15 @@ if (!surgery.id || surgery.patientId !== patient.id || surgery.preOpChecklist.le
 const surgerySummary = await request('/clinic/surgeries/summary');
 if (surgerySummary.counts.surgeries < 1 || surgerySummary.featureCoverage.length !== 3) throw new Error('Surgery summary failed');
 
+const hospitalization = await request('/clinic/hospitalizations', {
+  method: 'POST',
+  body: JSON.stringify({ patientId: patient.id, visitId: visit.id, stayType: 'hospitalization', cage: 'Smoke Ward / Cage 1', acuity: 'routine', ownerVisibleStatus: 'Smoke stable', tasks: 'Nursing check, Feeding', shiftNote: 'Smoke handover', photoCaption: 'Smoke photo' })
+});
+if (!hospitalization.id || hospitalization.patientId !== patient.id || hospitalization.treatmentSheet.length < 2) throw new Error('Hospitalization create failed');
+
+const hospitalizationSummary = await request('/clinic/hospitalizations/summary');
+if (hospitalizationSummary.counts.stays < 1 || hospitalizationSummary.featureCoverage.length !== 3) throw new Error('Hospitalization summary failed');
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: 'PATCH',
   body: JSON.stringify({ status: 'signed', signedBy: 'Dr. Smoke', signedAt: new Date().toISOString() })

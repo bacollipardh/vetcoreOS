@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { vetCoreBlueprint } from '../packages/shared/vetcore-blueprint.mjs';
 import { clinicCoreFeatureCoverage, clinicCoreSeed, getClinicCoreSummary, listOwners, listPatients, listVisits } from '../packages/shared/clinic-core.mjs';
+import { getHospitalizationSummary, hospitalizationFeatureCoverage } from '../packages/shared/hospitalizations.mjs';
 import { getPrescriptionSummary, prescriptionFeatureCoverage } from '../packages/shared/prescriptions.mjs';
 import { getSurgerySummary, surgeryFeatureCoverage } from '../packages/shared/surgeries.mjs';
 import { getVaccinationSummary, vaccinationFeatureCoverage } from '../packages/shared/vaccinations.mjs';
@@ -41,11 +42,18 @@ for (const range of ['F068-F069', 'F070-F073', 'F074-F077']) {
   }
 }
 
+for (const range of ['F078-F080', 'F081-F082', 'F083-F085']) {
+  if (!hospitalizationFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P2 hospitalization coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
 const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
 const prescriptionSummary = getPrescriptionSummary(clinicCoreSeed);
 const surgerySummary = getSurgerySummary(clinicCoreSeed);
-if (summary.counts.patients < 2 || summary.counts.owners < 2 || summary.counts.visits < 2 || vaccinationSummary.counts.vaccinations < 2 || prescriptionSummary.counts.prescriptions < 2 || surgerySummary.counts.surgeries < 2) {
+const hospitalizationSummary = getHospitalizationSummary(clinicCoreSeed);
+if (summary.counts.patients < 2 || summary.counts.owners < 2 || summary.counts.visits < 2 || vaccinationSummary.counts.vaccinations < 2 || prescriptionSummary.counts.prescriptions < 2 || surgerySummary.counts.surgeries < 2 || hospitalizationSummary.counts.stays < 2) {
   throw new Error('Clinic core seed data is incomplete');
 }
 
@@ -67,4 +75,5 @@ console.log(`Verified P1 clinic core seed with ${summary.counts.patients} patien
 console.log(`Verified P2 vaccination seed with ${vaccinationSummary.counts.vaccinations} vaccines and ${vaccinationSummary.counts.overdue} overdue alerts.`);
 console.log(`Verified P2 prescription seed with ${prescriptionSummary.counts.prescriptions} prescriptions and ${prescriptionSummary.counts.unsignedControlled} controlled alerts.`);
 console.log(`Verified P2 surgery seed with ${surgerySummary.counts.surgeries} surgeries and ${surgerySummary.alerts.length} alerts.`);
+console.log(`Verified P2 hospitalization seed with ${hospitalizationSummary.counts.stays} stays and ${hospitalizationSummary.counts.openTasks} open tasks.`);
 
