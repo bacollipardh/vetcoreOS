@@ -46,6 +46,15 @@ const vaccination = await request('/clinic/vaccinations', {
 });
 if (!vaccination.id || vaccination.patientId !== patient.id || !vaccination.inventoryReduced) throw new Error('Vaccination create failed');
 
+const prescription = await request('/clinic/prescriptions', {
+  method: 'POST',
+  body: JSON.stringify({ patientId: patient.id, visitId: visit.id, medicationName: 'Smoke med', catalogCode: 'ATCVET-SMOKE', defaultDoseMgPerKg: 0.5, patientWeightKg: 12.4, route: 'PO', frequency: 'BID', durationDays: 5, refillDueAt: '2026-05-14' })
+});
+if (!prescription.id || prescription.calculatedDoseMg <= 0) throw new Error('Prescription create failed');
+
+const prescriptionSummary = await request('/clinic/prescriptions/summary');
+if (prescriptionSummary.counts.prescriptions < 1 || prescriptionSummary.featureCoverage.length !== 3) throw new Error('Prescription summary failed');
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: 'PATCH',
   body: JSON.stringify({ status: 'signed', signedBy: 'Dr. Smoke', signedAt: new Date().toISOString() })

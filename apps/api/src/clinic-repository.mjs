@@ -32,7 +32,8 @@ function normalizeState(state) {
     owners: Array.isArray(state.owners) ? state.owners : [],
     patients: Array.isArray(state.patients) ? state.patients : [],
     visits: Array.isArray(state.visits) ? state.visits : [],
-    vaccinations: Array.isArray(state.vaccinations) ? state.vaccinations : []
+    vaccinations: Array.isArray(state.vaccinations) ? state.vaccinations : [],
+    prescriptions: Array.isArray(state.prescriptions) ? state.prescriptions : []
   };
 }
 export async function readClinicState() {
@@ -213,6 +214,57 @@ export async function updateVaccination(id, input) {
   state.vaccinations[index] = { ...state.vaccinations[index], ...input, id };
   await writeClinicState(state);
   return state.vaccinations[index];
+}
+
+export async function createPrescription(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error('valid patientId is required');
+  const latestWeight = patient.weightHistory?.at(-1)?.weightKg || input.patientWeightKg || 0;
+  const defaultDoseMgPerKg = Number(input.defaultDoseMgPerKg || 0);
+  const calculatedDoseMg = Math.round(Number(latestWeight) * defaultDoseMgPerKg * 100) / 100;
+  const safetyAlerts = [];
+  const medicationName = normalizeText(input.medicationName, 'Medication');
+  const controlledSubstance = Boolean(input.controlledSubstance) || ['buprenorphine', 'methadone', 'ketamine'].includes(medicationName.toLowerCase());
+
+  if (controlledSubstance) safetyAlerts.push('Controlled substance log required');
+  if (patient.allergies?.some((allergy) => medicationName.toLowerCase().includes(allergy.substance.toLowerCase()))) {
+    safetyAlerts.push(`Allergy alert: ${patient.allergies.map((allergy) => allergy.substance).join(', ')}`);
+  }
+
+  const prescription = {
+    id: makeId('rx'),
+    patientId: patient.id,
+    visitId: normalizeText(input.visitId) || null,
+    medicationName,
+    catalogCode: normalizeText(input.catalogCode),
+    defaultDoseMgPerKg,
+    patientWeightKg: Number(latestWeight || 0),
+    calculatedDoseMg,
+    route: normalizeText(input.route, 'PO'),
+    frequency: normalizeText(input.frequency, 'BID'),
+    durationDays: Number(input.durationDays || 0),
+    controlledSubstance,
+    prescriptionRequired: input.prescriptionRequired === false ? false : true,
+    safetyAlerts,
+    refillDueAt: normalizeText(input.refillDueAt) || null,
+    complianceStatus: normalizeText(input.complianceStatus, 'monitoring'),
+    signedBy: normalizeText(input.signedBy) || null,
+    signedAt: normalizeText(input.signedAt) || null
+  };
+
+  state.prescriptions.push(prescription);
+  await writeClinicState(state);
+  return prescription;
+}
+
+export async function updatePrescription(id, input) {
+  const state = await readClinicState();
+  const index = state.prescriptions.findIndex((prescription) => prescription.id === id);
+  if (index === -1) return null;
+  state.prescriptions[index] = { ...state.prescriptions[index], ...input, id };
+  await writeClinicState(state);
+  return state.prescriptions[index];
 }
 
 function nextYearDate(dateText) {

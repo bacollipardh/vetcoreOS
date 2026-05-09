@@ -164,11 +164,55 @@ export const seedVaccinations = [
   }
 ];
 
+export const seedPrescriptions = [
+  {
+    id: 'rx_001',
+    patientId: 'pat_001',
+    visitId: 'vis_001',
+    medicationName: 'Apoquel',
+    catalogCode: 'ATCVET-QD11AH90',
+    defaultDoseMgPerKg: 0.45,
+    patientWeightKg: 29.1,
+    calculatedDoseMg: 13.1,
+    route: 'PO',
+    frequency: 'BID',
+    durationDays: 14,
+    controlledSubstance: false,
+    prescriptionRequired: true,
+    safetyAlerts: [],
+    refillDueAt: '2026-05-17',
+    complianceStatus: 'monitoring',
+    signedBy: 'Dr. Elira Hoxha',
+    signedAt: '2026-05-03T09:06:00.000Z'
+  },
+  {
+    id: 'rx_002',
+    patientId: 'pat_002',
+    visitId: 'vis_002',
+    medicationName: 'Buprenorphine',
+    catalogCode: 'ATCVET-QN02AE01',
+    defaultDoseMgPerKg: 0.02,
+    patientWeightKg: 4.3,
+    calculatedDoseMg: 0.09,
+    route: 'Buccal',
+    frequency: 'TID',
+    durationDays: 3,
+    controlledSubstance: true,
+    prescriptionRequired: true,
+    safetyAlerts: ['Controlled substance log required'],
+    refillDueAt: null,
+    complianceStatus: 'clinic-administered',
+    signedBy: null,
+    signedAt: null
+  }
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
   visits: seedVisits,
-  vaccinations: seedVaccinations
+  vaccinations: seedVaccinations,
+  prescriptions: seedPrescriptions
 };
 
 function collection(state, key) {
