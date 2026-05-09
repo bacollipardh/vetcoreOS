@@ -40,6 +40,12 @@ const visit = await request('/clinic/visits', {
 });
 if (!visit.id || visit.patientId !== patient.id) throw new Error('Visit create failed');
 
+const vaccination = await request('/clinic/vaccinations', {
+  method: 'POST',
+  body: JSON.stringify({ patientId: patient.id, vaccineName: 'Smoke rabies', protocol: 'Smoke protocol', manufacturer: 'SmokeLab', lotNumber: 'SMOKE-1', administeredAt: '2026-05-09', nextDueAt: '2027-05-09' })
+});
+if (!vaccination.id || vaccination.patientId !== patient.id || !vaccination.inventoryReduced) throw new Error('Vaccination create failed');
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: 'PATCH',
   body: JSON.stringify({ status: 'signed', signedBy: 'Dr. Smoke', signedAt: new Date().toISOString() })
@@ -52,4 +58,5 @@ if (finalSummary.counts.patients !== initialSummary.counts.patients + 1) throw n
 server.close();
 await rm(new URL('../apps/api/data/clinic-core.json', import.meta.url), { force: true });
 console.log('API CRUD smoke checks passed.');
+
 

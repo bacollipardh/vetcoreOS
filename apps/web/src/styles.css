@@ -95,3 +95,6 @@ ul { padding-left: 18px; margin: 12px 0 0; }
 .amendments p { margin: 0; color: #475569; font-size: 13px; }
 .form-divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
 @media (max-width: 620px) { .visit-actions { justify-content: flex-start; } }
+.compact-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.panel-subsection { display: grid; gap: 12px; margin-top: 18px; }
+@media (max-width: 620px) { .compact-metrics { grid-template-columns: 1fr; } }

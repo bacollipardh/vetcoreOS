@@ -133,10 +133,42 @@ export const seedVisits = [
   }
 ];
 
+export const seedVaccinations = [
+  {
+    id: 'vac_001',
+    patientId: 'pat_001',
+    vaccineName: 'Rabies',
+    protocol: 'EU Pet Passport core',
+    manufacturer: 'VetBio EU',
+    lotNumber: 'RB-2026-001',
+    expiresAt: '2027-04-30',
+    administeredAt: '2026-05-03',
+    nextDueAt: '2027-05-03',
+    status: 'current',
+    inventoryReduced: true,
+    certificateStatus: 'ready-for-pdf'
+  },
+  {
+    id: 'vac_002',
+    patientId: 'pat_002',
+    vaccineName: 'FVRCP',
+    protocol: 'Cat core annual',
+    manufacturer: 'FelineCare',
+    lotNumber: 'FC-2025-778',
+    expiresAt: '2026-03-01',
+    administeredAt: '2025-04-22',
+    nextDueAt: '2026-04-22',
+    status: 'overdue',
+    inventoryReduced: true,
+    certificateStatus: 'needs-review'
+  }
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
-  visits: seedVisits
+  visits: seedVisits,
+  vaccinations: seedVaccinations
 };
 
 function collection(state, key) {
@@ -208,3 +240,4 @@ export function getClinicCoreSummary(state) {
     nextBuildTargets: ['Add database migrations', 'Add patient detail timeline', 'Add critical allergy banner across clinical screens']
   };
 }
+

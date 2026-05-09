@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { vetCoreBlueprint } from '../packages/shared/vetcore-blueprint.mjs';
 import { clinicCoreFeatureCoverage, clinicCoreSeed, getClinicCoreSummary, listOwners, listPatients, listVisits } from '../packages/shared/clinic-core.mjs';
+import { getVaccinationSummary, vaccinationFeatureCoverage } from '../packages/shared/vaccinations.mjs';
 
 const inventory = await readFile(new URL('../docs/vetcore-feature-inventory.md', import.meta.url), 'utf8');
 const featureMatches = inventory.match(/^- \*\*F\d{3}\*\*/gm) || [];
@@ -20,8 +21,15 @@ for (const range of ['F001-F018', 'F019-F029', 'F030-F045']) {
   }
 }
 
+for (const range of ['F046-F047', 'F048-F052', 'F053-F055']) {
+  if (!vaccinationFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P2 vaccination coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
-if (summary.counts.patients < 2 || summary.counts.owners < 2 || summary.counts.visits < 2) {
+const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
+if (summary.counts.patients < 2 || summary.counts.owners < 2 || summary.counts.visits < 2 || vaccinationSummary.counts.vaccinations < 2) {
   throw new Error('Clinic core seed data is incomplete');
 }
 
@@ -39,3 +47,6 @@ if (!listVisits(clinicCoreSeed).every((visit) => visit.physicalExam && Array.isA
 
 console.log(`Verified ${featureMatches.length} VetCoreOS feature IDs across ${vetCoreBlueprint.domains.length} domains.`);
 console.log(`Verified P1 clinic core seed with ${summary.counts.patients} patients, ${summary.counts.owners} owners and ${summary.counts.visits} visits.`);
+
+console.log(`Verified P2 vaccination seed with ${vaccinationSummary.counts.vaccinations} vaccines and ${vaccinationSummary.counts.overdue} overdue alerts.`);
+

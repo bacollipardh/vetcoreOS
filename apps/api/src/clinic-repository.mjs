@@ -27,12 +27,20 @@ function makeId(prefix) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function normalizeState(state) {
+  return {
+    owners: Array.isArray(state.owners) ? state.owners : [],
+    patients: Array.isArray(state.patients) ? state.patients : [],
+    visits: Array.isArray(state.visits) ? state.visits : [],
+    vaccinations: Array.isArray(state.vaccinations) ? state.vaccinations : []
+  };
+}
 export async function readClinicState() {
   try {
-    return JSON.parse(await readFile(dataFile, 'utf8'));
+    return normalizeState(JSON.parse(await readFile(dataFile, 'utf8')));
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    const seeded = clone(clinicCoreSeed);
+    const seeded = normalizeState(clone(clinicCoreSeed));
     await writeClinicState(seeded);
     return seeded;
   }
@@ -171,4 +179,50 @@ export async function updateVisit(id, input) {
   await writeClinicState(state);
   return state.visits[index];
 }
+
+
+export async function createVaccination(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error('valid patientId is required');
+  const administeredAt = normalizeText(input.administeredAt, nowIso().slice(0, 10));
+  const nextDueAt = normalizeText(input.nextDueAt, nextYearDate(administeredAt));
+  const vaccination = {
+    id: makeId('vac'),
+    patientId: patient.id,
+    vaccineName: normalizeText(input.vaccineName, 'Rabies'),
+    protocol: normalizeText(input.protocol, `${patient.species} core`),
+    manufacturer: normalizeText(input.manufacturer),
+    lotNumber: normalizeText(input.lotNumber),
+    expiresAt: normalizeText(input.expiresAt),
+    administeredAt,
+    nextDueAt,
+    status: 'current',
+    inventoryReduced: input.inventoryReduced === false ? false : true,
+    certificateStatus: normalizeText(input.certificateStatus, 'ready-for-pdf')
+  };
+  state.vaccinations.push(vaccination);
+  await writeClinicState(state);
+  return vaccination;
+}
+
+export async function updateVaccination(id, input) {
+  const state = await readClinicState();
+  const index = state.vaccinations.findIndex((vaccination) => vaccination.id === id);
+  if (index === -1) return null;
+  state.vaccinations[index] = { ...state.vaccinations[index], ...input, id };
+  await writeClinicState(state);
+  return state.vaccinations[index];
+}
+
+function nextYearDate(dateText) {
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return nowIso().slice(0, 10);
+  date.setUTCFullYear(date.getUTCFullYear() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+
+
+
 

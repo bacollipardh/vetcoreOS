@@ -9,26 +9,19 @@
   <body>
     <div class="app-frame">
       <aside class="sidebar">
-        <div class="brand-block">
-          <div class="brand-mark">VC</div>
-          <div><strong>VetCoreOS</strong><span>Clinic Core</span></div>
-        </div>
+        <div class="brand-block"><div class="brand-mark">VC</div><div><strong>VetCoreOS</strong><span>Clinic Core</span></div></div>
         <nav class="nav-tabs" aria-label="Primary">
           <button class="nav-item active" data-view="dashboard">Dashboard</button>
           <button class="nav-item" data-view="patients">Patients</button>
           <button class="nav-item" data-view="owners">Owners</button>
           <button class="nav-item" data-view="visits">Visits</button>
+          <button class="nav-item" data-view="vaccinations">Vaccinations</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
-        <div class="sidebar-note"><span>P1</span><p>Coverage: F001-F045</p></div>
+        <div class="sidebar-note"><span>P2</span><p>Coverage: F001-F055</p></div>
       </aside>
-
       <main class="workspace">
-        <header class="topbar">
-          <div><p class="eyebrow">Pan-European Veterinary SaaS</p><h1 id="view-title">Clinic Dashboard</h1></div>
-          <div class="api-pill" id="api-status">API</div>
-        </header>
-
+        <header class="topbar"><div><p class="eyebrow">Pan-European Veterinary SaaS</p><h1 id="view-title">Clinic Dashboard</h1></div><div class="api-pill" id="api-status">API</div></header>
         <section class="view active" data-panel="dashboard">
           <div class="metrics" id="metrics"></div>
           <div class="grid two">
@@ -37,64 +30,20 @@
           </div>
           <section class="panel"><div class="panel-header"><div><p class="eyebrow">Feature map</p><h2>P1 implementation coverage</h2></div></div><div class="grid three" id="clinic-summary"></div></section>
         </section>
-
         <section class="view" data-panel="patients">
-          <div class="split-layout">
-            <section class="panel"><div class="panel-header"><h2>Patient records</h2></div><div id="patients-list" class="record-list"></div></section>
-            <section class="panel sticky-panel patient-side-panel">
-              <div id="patient-detail" class="patient-detail"></div>
-              <div class="panel-header"><h2>New patient</h2></div>
-              <form class="form-card" data-form="patient">
-                <label>Name<input name="name" placeholder="Rex" required /></label>
-                <label>Owner<select name="ownerId" id="owner-options" required></select></label>
-                <label>Species<input name="species" placeholder="Dog" value="Dog" /></label>
-                <label>Breed<input name="breed" placeholder="Golden Retriever" /></label>
-                <label>Microchip<input name="microchip" placeholder="ISO microchip" /></label>
-                <label>Critical allergy<input name="allergy" placeholder="Penicillin" /></label>
-                <button type="submit">Create patient</button>
-              </form>
-            </section>
-          </div>
+          <div class="split-layout"><section class="panel"><div class="panel-header"><h2>Patient records</h2></div><div id="patients-list" class="record-list"></div></section><section class="panel sticky-panel patient-side-panel"><div id="patient-detail" class="patient-detail"></div><div class="panel-header"><h2>New patient</h2></div><form class="form-card" data-form="patient"><label>Name<input name="name" placeholder="Rex" required /></label><label>Owner<select name="ownerId" id="owner-options" required></select></label><label>Species<input name="species" placeholder="Dog" value="Dog" /></label><label>Breed<input name="breed" placeholder="Golden Retriever" /></label><label>Microchip<input name="microchip" placeholder="ISO microchip" /></label><label>Critical allergy<input name="allergy" placeholder="Penicillin" /></label><button type="submit">Create patient</button></form></section></div>
         </section>
-
         <section class="view" data-panel="owners">
-          <div class="split-layout">
-            <section class="panel"><div class="panel-header"><h2>Owner records</h2></div><div id="owners-list" class="record-list"></div></section>
-            <section class="panel sticky-panel"><div class="panel-header"><h2>New owner</h2></div><form class="form-card" data-form="owner"><label>Name<input name="displayName" placeholder="Arta Krasniqi" required /></label><label>Phone<input name="phone" placeholder="+383..." /></label><label>Email<input name="email" placeholder="owner@example.com" /></label><label>City<input name="city" placeholder="Prishtine" /></label><label>Tags<input name="tags" placeholder="VIP, breeder" /></label><button type="submit">Create owner</button></form></section>
-          </div>
+          <div class="split-layout"><section class="panel"><div class="panel-header"><h2>Owner records</h2></div><div id="owners-list" class="record-list"></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>New owner</h2></div><form class="form-card" data-form="owner"><label>Name<input name="displayName" placeholder="Arta Krasniqi" required /></label><label>Phone<input name="phone" placeholder="+383..." /></label><label>Email<input name="email" placeholder="owner@example.com" /></label><label>City<input name="city" placeholder="Prishtine" /></label><label>Tags<input name="tags" placeholder="VIP, breeder" /></label><button type="submit">Create owner</button></form></section></div>
         </section>
-
         <section class="view" data-panel="visits">
-          <div class="split-layout">
-            <section class="panel"><div class="panel-header"><h2>Visit timeline</h2></div><div id="visits-list" class="record-list timeline"></div></section>
-            <section class="panel sticky-panel">
-              <div class="panel-header"><h2>New visit</h2></div>
-              <form class="form-card" data-form="visit">
-                <label>Patient<select name="patientId" id="patient-options" required></select></label>
-                <label>Visit type<input name="visitType" placeholder="Consultation" value="Consultation" /></label>
-                <label>Clinician<input name="clinician" placeholder="Dr. Demo" value="Dr. Demo" /></label>
-                <label>Anamnesis<textarea name="anamnesis" placeholder="Owner reports..."></textarea></label>
-                <label>Procedure<input name="procedureName" placeholder="Consult" /></label>
-                <label>Cost EUR<input name="procedureCost" type="number" step="0.01" placeholder="25.00" /></label>
-                <button type="submit">Create visit</button>
-              </form>
-              <div class="form-divider"></div>
-              <form class="form-card" data-form="amendment">
-                <h3>Amend visit</h3>
-                <label>Visit<select name="visitId" id="visit-options" required></select></label>
-                <label>Reason<input name="reason" placeholder="Correction after review" required /></label>
-                <label>Note<textarea name="note" placeholder="Amendment note" required></textarea></label>
-                <button type="submit">Add amendment</button>
-              </form>
-            </section>
-          </div>
+          <div class="split-layout"><section class="panel"><div class="panel-header"><h2>Visit timeline</h2></div><div id="visits-list" class="record-list timeline"></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>New visit</h2></div><form class="form-card" data-form="visit"><label>Patient<select name="patientId" id="patient-options" required></select></label><label>Visit type<input name="visitType" placeholder="Consultation" value="Consultation" /></label><label>Clinician<input name="clinician" placeholder="Dr. Demo" value="Dr. Demo" /></label><label>Anamnesis<textarea name="anamnesis" placeholder="Owner reports..."></textarea></label><label>Procedure<input name="procedureName" placeholder="Consult" /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" placeholder="25.00" /></label><button type="submit">Create visit</button></form><div class="form-divider"></div><form class="form-card" data-form="amendment"><h3>Amend visit</h3><label>Visit<select name="visitId" id="visit-options" required></select></label><label>Reason<input name="reason" placeholder="Correction after review" required /></label><label>Note<textarea name="note" placeholder="Amendment note" required></textarea></label><button type="submit">Add amendment</button></form></section></div>
         </section>
-
-        <section class="view" data-panel="roadmap">
-          <section class="panel"><div class="panel-header"><div><p class="eyebrow">Roadmap</p><h2>Build phases</h2></div></div><div class="grid two" id="phases"></div></section>
-          <section class="panel"><div class="panel-header"><div><p class="eyebrow">Blueprint</p><h2>Product domains</h2></div></div><div class="grid three" id="domains"></div></section>
+        <section class="view" data-panel="vaccinations">
+          <div class="metrics compact-metrics" id="vaccination-metrics"></div>
+          <div class="split-layout"><section class="panel"><div class="panel-header"><div><p class="eyebrow">F046-F055</p><h2>Vaccination workflow</h2></div></div><div class="grid three" id="vaccination-coverage"></div><div class="panel-subsection"><h2>Overdue alerts</h2><div id="vaccination-alerts" class="record-list"></div></div><div class="panel-subsection"><h2>Vaccination history</h2><div id="vaccination-list" class="record-list"></div></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>Record vaccine</h2></div><form class="form-card" data-form="vaccination"><label>Patient<select name="patientId" id="vaccination-patient-options" required></select></label><label>Vaccine<input name="vaccineName" placeholder="Rabies" required /></label><label>Protocol<input name="protocol" placeholder="EU Pet Passport core" /></label><label>Manufacturer<input name="manufacturer" placeholder="Manufacturer" /></label><label>Lot number<input name="lotNumber" placeholder="LOT-001" /></label><label>Expires at<input name="expiresAt" type="date" /></label><label>Administered at<input name="administeredAt" type="date" /></label><label>Next due at<input name="nextDueAt" type="date" /></label><button type="submit">Record vaccination</button></form></section></div>
         </section>
-
+        <section class="view" data-panel="roadmap"><section class="panel"><div class="panel-header"><div><p class="eyebrow">Roadmap</p><h2>Build phases</h2></div></div><div class="grid two" id="phases"></div></section><section class="panel"><div class="panel-header"><div><p class="eyebrow">Blueprint</p><h2>Product domains</h2></div></div><div class="grid three" id="domains"></div></section></section>
         <p class="form-status" id="form-status"></p>
       </main>
     </div>
