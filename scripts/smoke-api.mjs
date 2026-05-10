@@ -84,9 +84,21 @@ if (diagnosticSummary.counts.diagnostics < 1 || diagnosticSummary.featureCoverag
 
 const currentVaccination = await request(`/clinic/vaccinations/${vaccination.id}`, {
   method: 'PATCH',
-  body: JSON.stringify({ status: 'current', certificateStatus: 'ready-for-pdf' })
+  body: JSON.stringify({ status: 'current', certificateStatus: 'issued', inventoryReduced: false })
 });
-if (currentVaccination.status !== 'current') throw new Error('Vaccination workflow action failed');
+if (currentVaccination.status !== 'current' || currentVaccination.certificateStatus !== 'issued' || currentVaccination.inventoryReduced) throw new Error('Vaccination workflow action failed');
+
+const updatedOwner = await request(`/clinic/owners/${owner.id}`, {
+  method: 'PATCH',
+  body: JSON.stringify({ displayName: 'Test Owner Updated', preferredChannel: 'email', address: { ...owner.address, city: 'Prishtina' }, tags: ['test', 'portal'], privateNote: 'Smoke owner note' })
+});
+if (updatedOwner.displayName !== 'Test Owner Updated' || updatedOwner.address.city !== 'Prishtina' || !updatedOwner.tags.includes('portal')) throw new Error('Owner detail update failed');
+
+const updatedPrescription = await request(`/clinic/prescriptions/${prescription.id}`, {
+  method: 'PATCH',
+  body: JSON.stringify({ complianceStatus: 'owner confirmed', durationDays: 7, controlledSubstance: true, safetyAlerts: ['Controlled substance log required'] })
+});
+if (!updatedPrescription.controlledSubstance || updatedPrescription.durationDays !== 7 || !updatedPrescription.safetyAlerts.includes('Controlled substance log required')) throw new Error('Prescription detail update failed');
 
 const readySurgery = await request(`/clinic/surgeries/${surgery.id}`, {
   method: 'PATCH',
@@ -96,15 +108,15 @@ if (readySurgery.consentStatus !== 'signed' || !readySurgery.preOpChecklist.ever
 
 const dischargedStay = await request(`/clinic/hospitalizations/${hospitalization.id}`, {
   method: 'PATCH',
-  body: JSON.stringify({ status: 'discharged', treatmentSheet: hospitalization.treatmentSheet.map((task) => ({ ...task, completed: true })), ownerVisibleStatus: 'Patient discharged' })
+  body: JSON.stringify({ status: 'discharged', treatmentSheet: [...hospitalization.treatmentSheet.map((task) => ({ ...task, completed: true })), { time: new Date().toISOString(), task: 'Smoke discharge task', intervalHours: 0, completed: false }], vitals: [{ at: new Date().toISOString(), temperatureC: 38.1, pulseBpm: 90, respirationRpm: 24, painScore: 1 }], ownerVisibleStatus: 'Patient discharged', dischargePlan: ['home meds'] })
 });
-if (dischargedStay.status !== 'discharged' || !dischargedStay.treatmentSheet.every((task) => task.completed)) throw new Error('Hospitalization workflow action failed');
+if (dischargedStay.status !== 'discharged' || dischargedStay.vitals.length < 1 || !dischargedStay.dischargePlan.includes('home meds')) throw new Error('Hospitalization workflow action failed');
 
 const finalizedDiagnostic = await request(`/clinic/diagnostics/${diagnostic.id}`, {
   method: 'PATCH',
-  body: JSON.stringify({ status: 'reported', thumbnailStatus: 'generated', report: { radiologist: 'Dr. Smoke', impression: 'Smoke finalized report', finalizedAt: new Date().toISOString() } })
+  body: JSON.stringify({ status: 'reported', thumbnailStatus: 'generated', annotations: [...diagnostic.annotations, { label: 'Smoke follow up', region: 'thorax', note: 'visible' }], report: { radiologist: 'Dr. Smoke', impression: 'Smoke finalized report', finalizedAt: new Date().toISOString() } })
 });
-if (finalizedDiagnostic.status !== 'reported' || finalizedDiagnostic.thumbnailStatus !== 'generated') throw new Error('Diagnostic workflow action failed');
+if (finalizedDiagnostic.status !== 'reported' || finalizedDiagnostic.thumbnailStatus !== 'generated' || finalizedDiagnostic.annotations.length < 2) throw new Error('Diagnostic workflow action failed');
 
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: 'PATCH',
