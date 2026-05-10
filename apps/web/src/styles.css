@@ -77,6 +77,10 @@ body.modal-active::before { content: ""; position: fixed; inset: 0; z-index: 40;
 .modal-close { border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #475569; padding: 8px 10px; font-weight: 900; cursor: pointer; }
 .modal-close:hover { background: #f1f5f9; }
 .patient-side-panel.modal-panel .patient-detail { border-bottom: 1px solid #e2e8f0; margin-bottom: 2px; }
+.record-detail-body { display: grid; gap: 10px; }
+.detail-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px; border-bottom: 1px solid #e2e8f0; padding: 10px 0; }
+.detail-row span { color: #64748b; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; }
+.detail-row p { margin: 0; color: #142033; line-height: 1.55; }
 .form-status { position: fixed; right: 20px; bottom: 20px; max-width: 360px; min-height: 0; margin: 0; border-radius: 10px; background: #142033; color: #fff; padding: 0; font-weight: 800; box-shadow: 0 18px 40px rgba(20, 32, 51, 0.2); }
 .form-status:not(:empty) { padding: 12px 14px; }
 code { border-radius: 6px; background: #eef2f7; padding: 2px 5px; }
