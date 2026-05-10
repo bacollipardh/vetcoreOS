@@ -209,14 +209,223 @@ function detailValue(value) {
       .join("<br />");
   return String(value);
 }
-function detailRows(record) {
-  return Object.entries(record)
-    .filter(([key]) => !["patient", "owner", "visit"].includes(key))
-    .map(
-      ([key, value]) =>
-        `<div class="detail-row"><span>${key}</span><p>${detailValue(value)}</p></div>`,
-    )
-    .join("");
+function money(cents) {
+  return `${((cents || 0) / 100).toFixed(2)} EUR`;
+}
+function detailPair(label, value) {
+  return `<div class="detail-pair"><span>${label}</span><strong>${detailValue(value)}</strong></div>`;
+}
+function detailSection(title, pairs, rows = "") {
+  return `<section class="detail-section"><h3>${title}</h3><div class="detail-pair-grid">${pairs.map(([label, value]) => detailPair(label, value)).join("")}</div>${rows}</section>`;
+}
+function compactList(items, emptyText = "No entries yet.") {
+  if (!items?.length) return `<p class="muted">${emptyText}</p>`;
+  return `<div class="compact-list">${items.map((item) => `<p>${detailValue(item)}</p>`).join("")}</div>`;
+}
+function recordDetail(type, record) {
+  const patientName = record.patient?.name || "Patient";
+  if (type === "owner") {
+    return detailSection(
+      "Owner profile",
+      [
+        ["Name", record.displayName],
+        ["Phone", record.phone],
+        ["Email", record.email],
+        ["Channel", record.preferredChannel],
+        ["City", record.address?.city],
+        ["Balance", money(record.balanceCents)],
+      ],
+      compactList(record.tags, "No owner tags."),
+    );
+  }
+  if (type === "visit") {
+    return [
+      detailSection("Clinical summary", [
+        ["Patient", patientName],
+        ["Visit type", record.visitType],
+        ["Status", record.status],
+        ["Clinician", record.clinician],
+        [
+          "Started",
+          record.startedAt ? new Date(record.startedAt).toLocaleString() : "-",
+        ],
+        ["Total", money(record.totalCents)],
+      ]),
+      detailSection(
+        "SOAP and plan",
+        [
+          ["Anamnesis", record.anamnesis],
+          [
+            "Temperature",
+            record.physicalExam?.temperatureC
+              ? `${record.physicalExam.temperatureC} C`
+              : "-",
+          ],
+          [
+            "Pulse",
+            record.physicalExam?.pulseBpm
+              ? `${record.physicalExam.pulseBpm} bpm`
+              : "-",
+          ],
+          [
+            "Respiration",
+            record.physicalExam?.respirationRpm
+              ? `${record.physicalExam.respirationRpm} rpm`
+              : "-",
+          ],
+          ["Diagnosis", record.diagnoses?.map((item) => item.label).join(", ")],
+          ["Treatment", record.treatmentPlan?.join(", ")],
+        ],
+        compactList(record.procedures, "No procedures recorded."),
+      ),
+    ].join("");
+  }
+  if (type === "vaccination") {
+    return detailSection("Vaccination record", [
+      ["Patient", patientName],
+      ["Vaccine", record.vaccineName],
+      ["Status", record.status],
+      ["Protocol", record.protocol],
+      ["Manufacturer", record.manufacturer],
+      ["Lot", record.lotNumber],
+      ["Administered", record.administeredAt],
+      ["Next due", record.nextDueAt],
+      ["Certificate", record.certificateStatus],
+      ["Inventory", record.inventoryReduced ? "Reduced" : "Pending"],
+    ]);
+  }
+  if (type === "prescription") {
+    return [
+      detailSection("Prescription", [
+        ["Patient", patientName],
+        ["Medication", record.medicationName],
+        ["Status", record.status],
+        ["Route", record.route],
+        ["Frequency", record.frequency],
+        ["Duration", `${record.durationDays || 0} days`],
+        ["Calculated dose", `${record.calculatedDoseMg || 0} mg`],
+        ["Refill", record.refillDueAt],
+      ]),
+      detailSection(
+        "Safety",
+        [
+          ["Controlled", record.controlledSubstance ? "Yes" : "No"],
+          ["Compliance", record.complianceStatus],
+          [
+            "Signed",
+            record.signedAt
+              ? new Date(record.signedAt).toLocaleString()
+              : "Not signed",
+          ],
+        ],
+        compactList(record.safetyAlerts, "No safety alerts."),
+      ),
+    ].join("");
+  }
+  if (type === "surgery") {
+    return [
+      detailSection("Surgery board", [
+        ["Patient", patientName],
+        ["Procedure", record.procedureName],
+        ["Status", record.status],
+        ["Readiness", record.riskStatus],
+        ["Surgeon", record.surgeon],
+        [
+          "Scheduled",
+          record.scheduledAt
+            ? new Date(record.scheduledAt).toLocaleString()
+            : "-",
+        ],
+        ["Estimate", money(record.estimateCents)],
+        ["Follow-up", record.followUpDueAt],
+      ]),
+      detailSection(
+        "Perioperative tracking",
+        [
+          ["Consent", record.consentStatus],
+          ["Checklist", `${record.checklistProgress || 0}%`],
+          ["Recovery", record.recoveryStatus],
+          ["Instructions", record.dischargeInstructions],
+        ],
+        compactList(record.preOpChecklist, "No checklist items."),
+      ),
+    ].join("");
+  }
+  if (type === "hospitalization") {
+    return [
+      detailSection("Stay overview", [
+        ["Patient", patientName],
+        ["Stay type", record.stayType],
+        ["Status", record.status],
+        ["Risk", record.riskStatus],
+        ["Cage", record.cage],
+        ["Acuity", record.acuity],
+        [
+          "Admitted",
+          record.admittedAt
+            ? new Date(record.admittedAt).toLocaleString()
+            : "-",
+        ],
+        [
+          "Discharge planned",
+          record.dischargePlannedAt
+            ? new Date(record.dischargePlannedAt).toLocaleString()
+            : "-",
+        ],
+      ]),
+      detailSection(
+        "Care execution",
+        [
+          ["Owner status", record.ownerVisibleStatus],
+          [
+            "Latest vitals",
+            record.latestVitals ? detailValue(record.latestVitals) : "-",
+          ],
+          ["Discharge plan", record.dischargePlan?.join(", ")],
+        ],
+        compactList(record.treatmentSheet, "No treatment tasks."),
+      ),
+    ].join("");
+  }
+  if (type === "diagnostic") {
+    return [
+      detailSection("Diagnostic worklist", [
+        ["Patient", patientName],
+        ["Title", record.title],
+        ["Modality", record.modality],
+        ["Status", record.status],
+        ["Risk", record.riskStatus],
+        [
+          "Captured",
+          record.capturedAt
+            ? new Date(record.capturedAt).toLocaleString()
+            : "-",
+        ],
+        ["Storage", record.storageType],
+        ["Thumbnail", record.thumbnailStatus],
+      ]),
+      detailSection(
+        "Report",
+        [
+          ["Radiologist", record.report?.radiologist],
+          ["Impression", record.report?.impression],
+          [
+            "Finalized",
+            record.report?.finalizedAt
+              ? new Date(record.report.finalizedAt).toLocaleString()
+              : "-",
+          ],
+        ],
+        compactList(record.annotations, "No annotations."),
+      ),
+    ].join("");
+  }
+  return detailSection(
+    "Record",
+    Object.entries(record).filter(
+      ([key]) => !["patient", "owner", "visit"].includes(key),
+    ),
+  );
 }
 function ownerInputs(owner) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="owner-profile" data-id="${owner.id}"><h3>Owner input</h3><label>Name<input name="displayName" value="${owner.displayName || ""}" required /></label><label>Phone<input name="phone" value="${owner.phone || ""}" /></label><label>Email<input name="email" value="${owner.email || ""}" /></label><label>Preferred channel<input name="preferredChannel" value="${owner.preferredChannel || ""}" /></label><label>City<input name="city" value="${owner.address?.city || ""}" /></label><label>Tags<input name="tags" value="${(owner.tags || []).join(", ")}" /></label><label>Private note<textarea name="privateNote">${owner.privateNote || ""}</textarea></label><button type="submit">Save owner info</button></form></div>`;
@@ -257,7 +466,7 @@ function openRecordDetail(type, id) {
   };
   const tools = toolMap[type] ? toolMap[type](record) : "";
   panel.querySelector("#record-detail-body").innerHTML =
-    `${tools}${detailRows(record)}`;
+    `${tools}${recordDetail(type, record)}`;
   if (type === "surgery") {
     panel.querySelector('[name="status"]').value = record.status || "planned";
     panel.querySelector('[name="consentStatus"]').value =
@@ -1125,9 +1334,7 @@ function bindDetailForms() {
         setStatus("Hospital task added.");
       }
       if (form.dataset.detailForm === "diagnostic-update") {
-        const record = latestState.diagnostics.find(
-          (entry) => entry.id === id,
-        );
+        const record = latestState.diagnostics.find((entry) => entry.id === id);
         await fetchJson(`/clinic/diagnostics/${id}`, {
           method: "PATCH",
           body: JSON.stringify({
@@ -1144,9 +1351,7 @@ function bindDetailForms() {
         setStatus("Diagnostic info saved.");
       }
       if (form.dataset.detailForm === "diagnostic-annotation") {
-        const record = latestState.diagnostics.find(
-          (entry) => entry.id === id,
-        );
+        const record = latestState.diagnostics.find((entry) => entry.id === id);
         const annotations = [
           ...(record?.annotations || []),
           { label: data.label, region: data.region, note: data.note },
