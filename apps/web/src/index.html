@@ -9,68 +9,966 @@
   <body>
     <div class="app-frame">
       <aside class="sidebar">
-        <div class="brand-block"><div class="brand-mark">VC</div><div><strong>VetCoreOS</strong><span>Clinic Core</span></div></div>
+        <div class="brand-block">
+          <div class="brand-mark">VC</div>
+          <div><strong>VetCoreOS</strong><span>Clinic Core</span></div>
+        </div>
         <nav class="nav-tabs" aria-label="Primary">
           <span class="nav-group">Command</span>
-          <button class="nav-item active" data-view="dashboard">Dashboard</button>
+          <button class="nav-item active" data-view="dashboard">
+            Dashboard
+          </button>
           <span class="nav-group">Records</span>
           <button class="nav-item" data-view="patients">Patients</button>
           <button class="nav-item" data-view="owners">Owners</button>
           <button class="nav-item" data-view="visits">Visits</button>
           <span class="nav-group">Clinical workflows</span>
-          <button class="nav-item" data-view="vaccinations">Vaccinations</button>
-          <button class="nav-item" data-view="prescriptions">Prescriptions</button>
+          <button class="nav-item" data-view="vaccinations">
+            Vaccinations
+          </button>
+          <button class="nav-item" data-view="prescriptions">
+            Prescriptions
+          </button>
           <button class="nav-item" data-view="surgery">Surgery</button>
-          <button class="nav-item" data-view="hospitalizations">Hospitalization</button>
+          <button class="nav-item" data-view="hospitalizations">
+            Hospitalization
+          </button>
           <button class="nav-item" data-view="diagnostics">Diagnostics</button>
+          <button class="nav-item" data-view="labs">Laboratory</button>
           <span class="nav-group">Controls</span>
           <button class="nav-item" data-view="audit">Audit</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
-        <div class="sidebar-note"><span>P2</span><p>Coverage: F001-F094</p></div>
+        <div class="sidebar-note">
+          <span>P2</span>
+          <p>Coverage: F001-F108</p>
+        </div>
       </aside>
       <main class="workspace">
-        <header class="topbar"><div><p class="eyebrow">Pan-European Veterinary SaaS</p><h1 id="view-title">Clinic Dashboard</h1></div><div class="topbar-tools"><label class="search-box"><span>Search</span><input id="global-search" type="search" placeholder="Patient, owner, medication, cage..." /></label><div class="api-pill" id="api-status">API</div></div></header>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Pan-European Veterinary SaaS</p>
+            <h1 id="view-title">Clinic Dashboard</h1>
+          </div>
+          <div class="topbar-tools">
+            <label class="search-box"
+              ><span>Search</span
+              ><input
+                id="global-search"
+                type="search"
+                placeholder="Patient, owner, medication, cage..."
+            /></label>
+            <div class="api-pill" id="api-status">API</div>
+          </div>
+        </header>
         <section class="view active" data-panel="dashboard">
           <div class="metrics" id="metrics"></div>
-          <section class="panel command-panel"><div class="panel-header"><div><p class="eyebrow">Work queue</p><h2>What needs action now</h2></div><div class="badges"><span class="badge" id="queue-count">0 open</span></div></div><div id="work-queue" class="work-queue"></div></section>
+          <section class="panel command-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Work queue</p>
+                <h2>What needs action now</h2>
+              </div>
+              <div class="badges">
+                <span class="badge" id="queue-count">0 open</span>
+              </div>
+            </div>
+            <div id="work-queue" class="work-queue"></div>
+          </section>
           <div class="grid two">
-            <section class="panel"><div class="panel-header"><div><p class="eyebrow">Clinical risk</p><h2>Critical patient signals</h2></div></div><div id="risk-list" class="record-list"></div></section>
-            <section class="panel"><div class="panel-header"><div><p class="eyebrow">Today</p><h2>Recent visits</h2></div></div><div id="recent-visits" class="record-list"></div></section>
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Clinical risk</p>
+                  <h2>Critical patient signals</h2>
+                </div>
+              </div>
+              <div id="risk-list" class="record-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Today</p>
+                  <h2>Recent visits</h2>
+                </div>
+              </div>
+              <div id="recent-visits" class="record-list"></div>
+            </section>
           </div>
-          <section class="panel"><div class="panel-header"><div><p class="eyebrow">Feature map</p><h2>P1 implementation coverage</h2></div></div><div class="grid three" id="clinic-summary"></div></section>
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Feature map</p>
+                <h2>P1 implementation coverage</h2>
+              </div>
+            </div>
+            <div class="grid three" id="clinic-summary"></div>
+          </section>
         </section>
         <section class="view" data-panel="patients">
-          <div class="split-layout"><section class="panel"><div class="panel-header"><h2>Patient records</h2></div><div id="patients-list" class="record-list"></div></section><section class="panel sticky-panel patient-side-panel"><div id="patient-detail" class="patient-detail"></div><div class="panel-header"><h2>New patient</h2></div><form class="form-card" data-form="patient"><label>Name<input name="name" placeholder="Rex" required /></label><label>Owner<select name="ownerId" id="owner-options" required></select></label><label>Species<input name="species" placeholder="Dog" value="Dog" /></label><label>Breed<input name="breed" placeholder="Golden Retriever" /></label><label>Sex<select name="sex"><option value="Unknown">Unknown</option><option value="Male">Male</option><option value="Female">Female</option></select></label><label>Birth date<input name="birthDate" type="date" /></label><label class="checkbox-line"><input name="neutered" type="checkbox" value="true" /> Neutered</label><label>Color<input name="color" placeholder="Golden" /></label><label>Microchip<input name="microchip" placeholder="ISO microchip" /></label><label>Passport<input name="passportNumber" placeholder="EU / local passport" /></label><label>Status<select name="status"><option value="active">Active</option><option value="inactive">Inactive</option><option value="archived">Archived</option></select></label><label>Tags<input name="tags" placeholder="friendly, annual-plan" /></label><label>Weight kg<input name="weightKg" type="number" step="0.1" placeholder="29.1" /></label><label>BCS score<input name="bcsScore" type="number" min="1" max="9" placeholder="5" /></label><label>Behavior notes<input name="behaviorNote" placeholder="Fear-free profile, shy, anxious" /></label><label>Critical allergy<input name="allergy" placeholder="Penicillin" /></label><label>Allergy note<input name="allergyNote" placeholder="Avoid beta-lactam antibiotics" /></label><button type="submit">Create patient</button></form></section></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header"><h2>Patient records</h2></div>
+              <div id="patients-list" class="record-list"></div>
+            </section>
+            <section class="panel sticky-panel patient-side-panel">
+              <div id="patient-detail" class="patient-detail"></div>
+              <div class="panel-header"><h2>New patient</h2></div>
+              <form class="form-card" data-form="patient">
+                <label
+                  >Name<input name="name" placeholder="Rex" required /></label
+                ><label
+                  >Owner<select
+                    name="ownerId"
+                    id="owner-options"
+                    required
+                  ></select></label
+                ><label
+                  >Species<input
+                    name="species"
+                    placeholder="Dog"
+                    value="Dog" /></label
+                ><label
+                  >Breed<input
+                    name="breed"
+                    placeholder="Golden Retriever" /></label
+                ><label
+                  >Sex<select name="sex">
+                    <option value="Unknown">Unknown</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select></label
+                ><label>Birth date<input name="birthDate" type="date" /></label
+                ><label class="checkbox-line"
+                  ><input name="neutered" type="checkbox" value="true" />
+                  Neutered</label
+                ><label>Color<input name="color" placeholder="Golden" /></label
+                ><label
+                  >Microchip<input
+                    name="microchip"
+                    placeholder="ISO microchip" /></label
+                ><label
+                  >Passport<input
+                    name="passportNumber"
+                    placeholder="EU / local passport" /></label
+                ><label
+                  >Status<select name="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="archived">Archived</option>
+                  </select></label
+                ><label
+                  >Tags<input
+                    name="tags"
+                    placeholder="friendly, annual-plan" /></label
+                ><label
+                  >Weight kg<input
+                    name="weightKg"
+                    type="number"
+                    step="0.1"
+                    placeholder="29.1" /></label
+                ><label
+                  >BCS score<input
+                    name="bcsScore"
+                    type="number"
+                    min="1"
+                    max="9"
+                    placeholder="5" /></label
+                ><label
+                  >Behavior notes<input
+                    name="behaviorNote"
+                    placeholder="Fear-free profile, shy, anxious" /></label
+                ><label
+                  >Critical allergy<input
+                    name="allergy"
+                    placeholder="Penicillin" /></label
+                ><label
+                  >Allergy note<input
+                    name="allergyNote"
+                    placeholder="Avoid beta-lactam antibiotics" /></label
+                ><button type="submit">Create patient</button>
+              </form>
+            </section>
+          </div>
         </section>
         <section class="view" data-panel="owners">
-          <div class="split-layout"><section class="panel"><div class="panel-header"><h2>Owner records</h2></div><div id="owners-list" class="record-list"></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>New owner</h2></div><form class="form-card" data-form="owner"><label>Name<input name="displayName" placeholder="Arta Krasniqi" required /></label><label>Document ID<input name="documentId" placeholder="EU-KS-102938" /></label><label>Language<input name="language" placeholder="sq" value="sq" /></label><label>Preferred channel<select name="preferredChannel"><option value="Phone">Phone</option><option value="WhatsApp">WhatsApp</option><option value="Email">Email</option><option value="SMS">SMS</option></select></label><label>Phone<input name="phone" placeholder="+383..." /></label><label>Email<input name="email" placeholder="owner@example.com" /></label><label>Address line<input name="addressLine1" placeholder="Rruga B, 14" /></label><label>City<input name="city" placeholder="Prishtine" /></label><label>Region<input name="region" placeholder="Kosove" /></label><label>Country<input name="country" placeholder="XK" value="XK" /></label><label>Postal code<input name="postalCode" placeholder="10000" /></label><label>Balance cents<input name="balanceCents" type="number" placeholder="0" /></label><label>Tags<input name="tags" placeholder="VIP, breeder" /></label><label>Private note<textarea name="privateNote" placeholder="Preferences, handling notes, billing notes"></textarea></label><label class="checkbox-line"><input name="marketingConsent" type="checkbox" value="true" /> Marketing consent</label><button type="submit">Create owner</button></form></section></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header"><h2>Owner records</h2></div>
+              <div id="owners-list" class="record-list"></div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>New owner</h2></div>
+              <form class="form-card" data-form="owner">
+                <label
+                  >Name<input
+                    name="displayName"
+                    placeholder="Arta Krasniqi"
+                    required /></label
+                ><label
+                  >Document ID<input
+                    name="documentId"
+                    placeholder="EU-KS-102938" /></label
+                ><label
+                  >Language<input
+                    name="language"
+                    placeholder="sq"
+                    value="sq" /></label
+                ><label
+                  >Preferred channel<select name="preferredChannel">
+                    <option value="Phone">Phone</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Email">Email</option>
+                    <option value="SMS">SMS</option>
+                  </select></label
+                ><label>Phone<input name="phone" placeholder="+383..." /></label
+                ><label
+                  >Email<input
+                    name="email"
+                    placeholder="owner@example.com" /></label
+                ><label
+                  >Address line<input
+                    name="addressLine1"
+                    placeholder="Rruga B, 14" /></label
+                ><label>City<input name="city" placeholder="Prishtine" /></label
+                ><label
+                  >Region<input name="region" placeholder="Kosove" /></label
+                ><label
+                  >Country<input
+                    name="country"
+                    placeholder="XK"
+                    value="XK" /></label
+                ><label
+                  >Postal code<input
+                    name="postalCode"
+                    placeholder="10000" /></label
+                ><label
+                  >Balance cents<input
+                    name="balanceCents"
+                    type="number"
+                    placeholder="0" /></label
+                ><label
+                  >Tags<input name="tags" placeholder="VIP, breeder" /></label
+                ><label
+                  >Private note<textarea
+                    name="privateNote"
+                    placeholder="Preferences, handling notes, billing notes"
+                  ></textarea></label
+                ><label class="checkbox-line"
+                  ><input
+                    name="marketingConsent"
+                    type="checkbox"
+                    value="true"
+                  />
+                  Marketing consent</label
+                ><button type="submit">Create owner</button>
+              </form>
+            </section>
+          </div>
         </section>
         <section class="view" data-panel="visits">
-          <div class="split-layout"><section class="panel"><div class="panel-header"><h2>Visit timeline</h2></div><div id="visits-list" class="record-list timeline"></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>New visit</h2></div><form class="form-card" data-form="visit"><label>Patient<select name="patientId" id="patient-options" required></select></label><label>Visit type<input name="visitType" placeholder="Consultation" value="Consultation" /></label><label>Status<select name="status"><option value="draft">Draft</option><option value="signed">Signed</option></select></label><label>Started at<input name="startedAt" type="datetime-local" /></label><label>Clinician<input name="clinician" placeholder="Dr. Demo" value="Dr. Demo" /></label><label>Anamnesis<textarea name="anamnesis" placeholder="Owner reports..."></textarea></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" placeholder="38.5" /></label><label>Pulse bpm<input name="pulseBpm" type="number" placeholder="88" /></label><label>Respiration rpm<input name="respirationRpm" type="number" placeholder="24" /></label><label>Mucous membranes<input name="mucousMembranes" placeholder="Pink, moist" /></label><label>Lymph nodes<input name="lymphNodes" placeholder="Normal" /></label><label>Diagnosis<input name="diagnosis" placeholder="Seasonal pruritus" /></label><label>Differentials<input name="differentialDiagnoses" placeholder="Atopy, flea allergy" /></label><label>Treatment plan<input name="treatmentPlan" placeholder="Recheck in 14 days, refill prevention" /></label><label>Procedure<input name="procedureName" placeholder="Consult" /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" placeholder="25.00" /></label><label>Continuity from visit<input name="continuityFromVisitId" placeholder="vis_..." /></label><button type="submit">Create visit</button></form><div class="form-divider"></div><form class="form-card" data-form="amendment"><h3>Amend visit</h3><label>Visit<select name="visitId" id="visit-options" required></select></label><label>Reason<input name="reason" placeholder="Correction after review" required /></label><label>Note<textarea name="note" placeholder="Amendment note" required></textarea></label><button type="submit">Add amendment</button></form></section></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header"><h2>Visit timeline</h2></div>
+              <div id="visits-list" class="record-list timeline"></div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>New visit</h2></div>
+              <form class="form-card" data-form="visit">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="patient-options"
+                    required
+                  ></select></label
+                ><label
+                  >Visit type<input
+                    name="visitType"
+                    placeholder="Consultation"
+                    value="Consultation" /></label
+                ><label
+                  >Status<select name="status">
+                    <option value="draft">Draft</option>
+                    <option value="signed">Signed</option>
+                  </select></label
+                ><label
+                  >Started at<input
+                    name="startedAt"
+                    type="datetime-local" /></label
+                ><label
+                  >Clinician<input
+                    name="clinician"
+                    placeholder="Dr. Demo"
+                    value="Dr. Demo" /></label
+                ><label
+                  >Anamnesis<textarea
+                    name="anamnesis"
+                    placeholder="Owner reports..."
+                  ></textarea></label
+                ><label
+                  >Temperature C<input
+                    name="temperatureC"
+                    type="number"
+                    step="0.1"
+                    placeholder="38.5" /></label
+                ><label
+                  >Pulse bpm<input
+                    name="pulseBpm"
+                    type="number"
+                    placeholder="88" /></label
+                ><label
+                  >Respiration rpm<input
+                    name="respirationRpm"
+                    type="number"
+                    placeholder="24" /></label
+                ><label
+                  >Mucous membranes<input
+                    name="mucousMembranes"
+                    placeholder="Pink, moist" /></label
+                ><label
+                  >Lymph nodes<input
+                    name="lymphNodes"
+                    placeholder="Normal" /></label
+                ><label
+                  >Diagnosis<input
+                    name="diagnosis"
+                    placeholder="Seasonal pruritus" /></label
+                ><label
+                  >Differentials<input
+                    name="differentialDiagnoses"
+                    placeholder="Atopy, flea allergy" /></label
+                ><label
+                  >Treatment plan<input
+                    name="treatmentPlan"
+                    placeholder="Recheck in 14 days, refill prevention" /></label
+                ><label
+                  >Procedure<input
+                    name="procedureName"
+                    placeholder="Consult" /></label
+                ><label
+                  >Cost EUR<input
+                    name="procedureCost"
+                    type="number"
+                    step="0.01"
+                    placeholder="25.00" /></label
+                ><label
+                  >Continuity from visit<input
+                    name="continuityFromVisitId"
+                    placeholder="vis_..." /></label
+                ><button type="submit">Create visit</button>
+              </form>
+              <div class="form-divider"></div>
+              <form class="form-card" data-form="amendment">
+                <h3>Amend visit</h3>
+                <label
+                  >Visit<select
+                    name="visitId"
+                    id="visit-options"
+                    required
+                  ></select></label
+                ><label
+                  >Reason<input
+                    name="reason"
+                    placeholder="Correction after review"
+                    required /></label
+                ><label
+                  >Note<textarea
+                    name="note"
+                    placeholder="Amendment note"
+                    required
+                  ></textarea></label
+                ><button type="submit">Add amendment</button>
+              </form>
+            </section>
+          </div>
         </section>
         <section class="view" data-panel="vaccinations">
           <div class="metrics compact-metrics" id="vaccination-metrics"></div>
-          <div class="split-layout"><section class="panel"><div class="panel-header"><div><p class="eyebrow">F046-F055</p><h2>Vaccination workflow</h2></div></div><div class="grid three" id="vaccination-coverage"></div><div class="panel-subsection"><h2>Overdue alerts</h2><div id="vaccination-alerts" class="record-list"></div></div><div class="panel-subsection"><h2>Vaccination history</h2><div id="vaccination-list" class="record-list"></div></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>Record vaccine</h2></div><form class="form-card" data-form="vaccination"><label>Patient<select name="patientId" id="vaccination-patient-options" required></select></label><label>Vaccine<input name="vaccineName" placeholder="Rabies" required /></label><label>Protocol<input name="protocol" placeholder="EU Pet Passport core" /></label><label>Manufacturer<input name="manufacturer" placeholder="Manufacturer" /></label><label>Lot number<input name="lotNumber" placeholder="LOT-001" /></label><label>Expires at<input name="expiresAt" type="date" /></label><label>Administered at<input name="administeredAt" type="date" /></label><label>Next due at<input name="nextDueAt" type="date" /></label><button type="submit">Record vaccination</button></form></section></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F046-F055</p>
+                  <h2>Vaccination workflow</h2>
+                </div>
+              </div>
+              <div class="grid three" id="vaccination-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Overdue alerts</h2>
+                <div id="vaccination-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Vaccination history</h2>
+                <div id="vaccination-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Record vaccine</h2></div>
+              <form class="form-card" data-form="vaccination">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="vaccination-patient-options"
+                    required
+                  ></select></label
+                ><label
+                  >Vaccine<input
+                    name="vaccineName"
+                    placeholder="Rabies"
+                    required /></label
+                ><label
+                  >Protocol<input
+                    name="protocol"
+                    placeholder="EU Pet Passport core" /></label
+                ><label
+                  >Manufacturer<input
+                    name="manufacturer"
+                    placeholder="Manufacturer" /></label
+                ><label
+                  >Lot number<input
+                    name="lotNumber"
+                    placeholder="LOT-001" /></label
+                ><label>Expires at<input name="expiresAt" type="date" /></label
+                ><label
+                  >Administered at<input
+                    name="administeredAt"
+                    type="date" /></label
+                ><label>Next due at<input name="nextDueAt" type="date" /></label
+                ><button type="submit">Record vaccination</button>
+              </form>
+            </section>
+          </div>
         </section>
         <section class="view" data-panel="prescriptions">
           <div class="metrics compact-metrics" id="prescription-metrics"></div>
-          <div class="split-layout"><section class="panel"><div class="panel-header"><div><p class="eyebrow">F056-F067</p><h2>Prescription & dosing workflow</h2></div></div><div class="grid three" id="prescription-coverage"></div><div class="panel-subsection"><h2>Controlled drug alerts</h2><div id="prescription-alerts" class="record-list"></div></div><div class="panel-subsection"><h2>Refill reminders</h2><div id="prescription-refills" class="record-list"></div></div><div class="panel-subsection"><h2>Prescription history</h2><div id="prescription-list" class="record-list"></div></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>Create prescription</h2></div><form class="form-card" data-form="prescription"><label>Patient<select name="patientId" id="prescription-patient-options" required></select></label><label>Visit<select name="visitId" id="prescription-visit-options"></select></label><label>Medication<input name="medicationName" placeholder="Apoquel" required /></label><label>Catalog code<input name="catalogCode" placeholder="ATCVET-..." /></label><label>Dose mg/kg<input name="defaultDoseMgPerKg" type="number" step="0.01" placeholder="0.45" required /></label><label>Weight override kg<input name="patientWeightKg" type="number" step="0.1" placeholder="Uses latest patient weight if blank" /></label><label>Route<input name="route" placeholder="PO" /></label><label>Frequency<input name="frequency" placeholder="BID" /></label><label>Duration days<input name="durationDays" type="number" placeholder="14" /></label><label>Refill due<input name="refillDueAt" type="date" /></label><label class="checkbox-line"><input name="controlledSubstance" type="checkbox" value="true" /> Controlled substance</label><button type="submit">Create prescription</button></form></section></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F056-F067</p>
+                  <h2>Prescription & dosing workflow</h2>
+                </div>
+              </div>
+              <div class="grid three" id="prescription-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Controlled drug alerts</h2>
+                <div id="prescription-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Refill reminders</h2>
+                <div id="prescription-refills" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Prescription history</h2>
+                <div id="prescription-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Create prescription</h2></div>
+              <form class="form-card" data-form="prescription">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="prescription-patient-options"
+                    required
+                  ></select></label
+                ><label
+                  >Visit<select
+                    name="visitId"
+                    id="prescription-visit-options"
+                  ></select></label
+                ><label
+                  >Medication<input
+                    name="medicationName"
+                    placeholder="Apoquel"
+                    required /></label
+                ><label
+                  >Catalog code<input
+                    name="catalogCode"
+                    placeholder="ATCVET-..." /></label
+                ><label
+                  >Dose mg/kg<input
+                    name="defaultDoseMgPerKg"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.45"
+                    required /></label
+                ><label
+                  >Weight override kg<input
+                    name="patientWeightKg"
+                    type="number"
+                    step="0.1"
+                    placeholder="Uses latest patient weight if blank" /></label
+                ><label>Route<input name="route" placeholder="PO" /></label
+                ><label
+                  >Frequency<input name="frequency" placeholder="BID" /></label
+                ><label
+                  >Duration days<input
+                    name="durationDays"
+                    type="number"
+                    placeholder="14" /></label
+                ><label
+                  >Refill due<input name="refillDueAt" type="date" /></label
+                ><label class="checkbox-line"
+                  ><input
+                    name="controlledSubstance"
+                    type="checkbox"
+                    value="true"
+                  />
+                  Controlled substance</label
+                ><button type="submit">Create prescription</button>
+              </form>
+            </section>
+          </div>
         </section>
         <section class="view" data-panel="surgery">
           <div class="metrics compact-metrics" id="surgery-metrics"></div>
-          <div class="split-layout"><section class="panel"><div class="panel-header"><div><p class="eyebrow">F068-F077</p><h2>Surgery workflow</h2></div></div><div class="grid three" id="surgery-coverage"></div><div class="panel-subsection"><h2>Surgery alerts</h2><div id="surgery-alerts" class="record-list"></div></div><div class="panel-subsection"><h2>Surgery board</h2><div id="surgery-list" class="record-list"></div></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>Plan surgery</h2></div><form class="form-card" data-form="surgery"><label>Patient<select name="patientId" id="surgery-patient-options" required></select></label><label>Visit<select name="visitId" id="surgery-visit-options"></select></label><label>Procedure<input name="procedureName" placeholder="Dental cleaning" required /></label><label>Scheduled at<input name="scheduledAt" type="datetime-local" /></label><label>Surgeon<input name="surgeon" placeholder="Dr. Demo" /></label><label>Status<select name="status"><option value="planned">Planned</option><option value="ready">Ready</option><option value="in-progress">In progress</option><option value="recovery">Recovery</option><option value="completed">Completed</option></select></label><label>Estimate EUR<input name="estimate" type="number" step="0.01" placeholder="185.00" /></label><label>Consent status<select name="consentStatus"><option value="pending">Pending</option><option value="signed">Signed</option></select></label><label>Recovery status<select name="recoveryStatus"><option value="not-started">Not started</option><option value="monitoring">Monitoring</option><option value="cleared">Cleared</option></select></label><label>Checklist<input name="checklist" placeholder="Fasting confirmed, Bloodwork reviewed" /></label><label>Follow-up due<input name="followUpDueAt" type="date" /></label><label>Discharge instructions<textarea name="dischargeInstructions" placeholder="Home care, medication, collar, wound checks"></textarea></label><button type="submit">Plan surgery</button></form></section></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F068-F077</p>
+                  <h2>Surgery workflow</h2>
+                </div>
+              </div>
+              <div class="grid three" id="surgery-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Surgery alerts</h2>
+                <div id="surgery-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Surgery board</h2>
+                <div id="surgery-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Plan surgery</h2></div>
+              <form class="form-card" data-form="surgery">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="surgery-patient-options"
+                    required
+                  ></select></label
+                ><label
+                  >Visit<select
+                    name="visitId"
+                    id="surgery-visit-options"
+                  ></select></label
+                ><label
+                  >Procedure<input
+                    name="procedureName"
+                    placeholder="Dental cleaning"
+                    required /></label
+                ><label
+                  >Scheduled at<input
+                    name="scheduledAt"
+                    type="datetime-local" /></label
+                ><label
+                  >Surgeon<input name="surgeon" placeholder="Dr. Demo" /></label
+                ><label
+                  >Status<select name="status">
+                    <option value="planned">Planned</option>
+                    <option value="ready">Ready</option>
+                    <option value="in-progress">In progress</option>
+                    <option value="recovery">Recovery</option>
+                    <option value="completed">Completed</option>
+                  </select></label
+                ><label
+                  >Estimate EUR<input
+                    name="estimate"
+                    type="number"
+                    step="0.01"
+                    placeholder="185.00" /></label
+                ><label
+                  >Consent status<select name="consentStatus">
+                    <option value="pending">Pending</option>
+                    <option value="signed">Signed</option>
+                  </select></label
+                ><label
+                  >Recovery status<select name="recoveryStatus">
+                    <option value="not-started">Not started</option>
+                    <option value="monitoring">Monitoring</option>
+                    <option value="cleared">Cleared</option>
+                  </select></label
+                ><label
+                  >Checklist<input
+                    name="checklist"
+                    placeholder="Fasting confirmed, Bloodwork reviewed" /></label
+                ><label
+                  >Follow-up due<input
+                    name="followUpDueAt"
+                    type="date" /></label
+                ><label
+                  >Discharge instructions<textarea
+                    name="dischargeInstructions"
+                    placeholder="Home care, medication, collar, wound checks"
+                  ></textarea></label
+                ><button type="submit">Plan surgery</button>
+              </form>
+            </section>
+          </div>
         </section>
         <section class="view" data-panel="hospitalizations">
-          <div class="metrics compact-metrics" id="hospitalization-metrics"></div>
-          <div class="split-layout"><section class="panel"><div class="panel-header"><div><p class="eyebrow">F078-F085</p><h2>Hospitalization & boarding</h2></div></div><div class="grid three" id="hospitalization-coverage"></div><div class="panel-subsection"><h2>Care alerts</h2><div id="hospitalization-alerts" class="record-list"></div></div><div class="panel-subsection"><h2>Cage board</h2><div id="hospitalization-list" class="record-list"></div></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>Admit patient</h2></div><form class="form-card" data-form="hospitalization"><label>Patient<select name="patientId" id="hospitalization-patient-options" required></select></label><label>Visit<select name="visitId" id="hospitalization-visit-options"></select></label><label>Stay type<select name="stayType"><option value="hospitalization">Hospitalization</option><option value="boarding">Boarding</option></select></label><label>Cage / ward<input name="cage" placeholder="Ward A / Cage 3" required /></label><label>Admitted at<input name="admittedAt" type="datetime-local" /></label><label>Discharge planned<input name="dischargePlannedAt" type="datetime-local" /></label><label>Status<select name="status"><option value="in-care">In care</option><option value="boarding">Boarding</option><option value="discharged">Discharged</option></select></label><label>Acuity<input name="acuity" placeholder="post-op, routine, isolation" /></label><label>Owner visible status<input name="ownerVisibleStatus" placeholder="Recovering well" /></label><label>Treatment tasks<input name="tasks" placeholder="Pain score, Evening feeding" /></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" /></label><label>Pulse bpm<input name="pulseBpm" type="number" /></label><label>Respiration rpm<input name="respirationRpm" type="number" /></label><label>Pain score<input name="painScore" type="number" min="0" max="10" /></label><label>Shift<input name="shift" placeholder="Day" /></label><label>Author<input name="author" placeholder="Care team" /></label><label>Shift note<textarea name="shiftNote" placeholder="Handover note"></textarea></label><label>Photo update<input name="photoCaption" placeholder="Resting comfortably" /></label><label>Discharge plan<input name="dischargePlan" placeholder="Home care instructions, pickup time" /></label><button type="submit">Admit patient</button></form></section></div>
+          <div
+            class="metrics compact-metrics"
+            id="hospitalization-metrics"
+          ></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F078-F085</p>
+                  <h2>Hospitalization & boarding</h2>
+                </div>
+              </div>
+              <div class="grid three" id="hospitalization-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Care alerts</h2>
+                <div id="hospitalization-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Cage board</h2>
+                <div id="hospitalization-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Admit patient</h2></div>
+              <form class="form-card" data-form="hospitalization">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="hospitalization-patient-options"
+                    required
+                  ></select></label
+                ><label
+                  >Visit<select
+                    name="visitId"
+                    id="hospitalization-visit-options"
+                  ></select></label
+                ><label
+                  >Stay type<select name="stayType">
+                    <option value="hospitalization">Hospitalization</option>
+                    <option value="boarding">Boarding</option>
+                  </select></label
+                ><label
+                  >Cage / ward<input
+                    name="cage"
+                    placeholder="Ward A / Cage 3"
+                    required /></label
+                ><label
+                  >Admitted at<input
+                    name="admittedAt"
+                    type="datetime-local" /></label
+                ><label
+                  >Discharge planned<input
+                    name="dischargePlannedAt"
+                    type="datetime-local" /></label
+                ><label
+                  >Status<select name="status">
+                    <option value="in-care">In care</option>
+                    <option value="boarding">Boarding</option>
+                    <option value="discharged">Discharged</option>
+                  </select></label
+                ><label
+                  >Acuity<input
+                    name="acuity"
+                    placeholder="post-op, routine, isolation" /></label
+                ><label
+                  >Owner visible status<input
+                    name="ownerVisibleStatus"
+                    placeholder="Recovering well" /></label
+                ><label
+                  >Treatment tasks<input
+                    name="tasks"
+                    placeholder="Pain score, Evening feeding" /></label
+                ><label
+                  >Temperature C<input
+                    name="temperatureC"
+                    type="number"
+                    step="0.1" /></label
+                ><label>Pulse bpm<input name="pulseBpm" type="number" /></label
+                ><label
+                  >Respiration rpm<input
+                    name="respirationRpm"
+                    type="number" /></label
+                ><label
+                  >Pain score<input
+                    name="painScore"
+                    type="number"
+                    min="0"
+                    max="10" /></label
+                ><label>Shift<input name="shift" placeholder="Day" /></label
+                ><label
+                  >Author<input name="author" placeholder="Care team" /></label
+                ><label
+                  >Shift note<textarea
+                    name="shiftNote"
+                    placeholder="Handover note"
+                  ></textarea></label
+                ><label
+                  >Photo update<input
+                    name="photoCaption"
+                    placeholder="Resting comfortably" /></label
+                ><label
+                  >Discharge plan<input
+                    name="dischargePlan"
+                    placeholder="Home care instructions, pickup time" /></label
+                ><button type="submit">Admit patient</button>
+              </form>
+            </section>
+          </div>
         </section>
         <section class="view" data-panel="diagnostics">
           <div class="metrics compact-metrics" id="diagnostic-metrics"></div>
-          <div class="split-layout"><section class="panel"><div class="panel-header"><div><p class="eyebrow">F086-F094</p><h2>Diagnostics & imaging</h2></div></div><div class="grid three" id="diagnostic-coverage"></div><div class="panel-subsection"><h2>Diagnostic alerts</h2><div id="diagnostic-alerts" class="record-list"></div></div><div class="panel-subsection"><h2>Imaging worklist</h2><div id="diagnostic-list" class="record-list"></div></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>Record diagnostic</h2></div><form class="form-card" data-form="diagnostic"><label>Patient<select name="patientId" id="diagnostic-patient-options" required></select></label><label>Visit<select name="visitId" id="diagnostic-visit-options"></select></label><label>Modality<select name="modality"><option value="X-ray">X-ray</option><option value="Ultrasound">Ultrasound</option><option value="CT">CT</option><option value="Clinical photo">Clinical photo</option><option value="Clinical video">Clinical video</option></select></label><label>Title<input name="title" placeholder="Thoracic radiographs" required /></label><label>Captured at<input name="capturedAt" type="datetime-local" /></label><label>Status<select name="status"><option value="needs-review">Needs review</option><option value="reported">Reported</option></select></label><label>Storage type<select name="storageType"><option value="local-media">Local media</option><option value="external-pacs">External PACS</option></select></label><label>File name<input name="fileName" placeholder="study.dcm / photo.jpg" /></label><label>Thumbnail status<select name="thumbnailStatus"><option value="queued">Queued</option><option value="generated">Generated</option></select></label><label>PACS link<input name="pacsLink" placeholder="pacs://..." /></label><label>Annotations<input name="annotations" placeholder="Lesion edge, fracture line" /></label><label>Annotation note<input name="annotationNote" placeholder="Mild erythema, suspected fracture" /></label><label>Region<input name="region" placeholder="thorax, abdomen, limb" /></label><label>Media type<select name="mediaType"><option value="photo">Photo</option><option value="video">Video</option></select></label><label>Media caption<input name="mediaCaption" placeholder="Abdominal scar photo" /></label><label>Radiologist<input name="radiologist" placeholder="Dr. Demo" /></label><label>Impression<textarea name="impression" placeholder="Diagnostic report impression"></textarea></label><button type="submit">Record diagnostic</button></form></section></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F086-F094</p>
+                  <h2>Diagnostics & imaging</h2>
+                </div>
+              </div>
+              <div class="grid three" id="diagnostic-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Diagnostic alerts</h2>
+                <div id="diagnostic-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Imaging worklist</h2>
+                <div id="diagnostic-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Record diagnostic</h2></div>
+              <form class="form-card" data-form="diagnostic">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="diagnostic-patient-options"
+                    required
+                  ></select></label
+                ><label
+                  >Visit<select
+                    name="visitId"
+                    id="diagnostic-visit-options"
+                  ></select></label
+                ><label
+                  >Modality<select name="modality">
+                    <option value="X-ray">X-ray</option>
+                    <option value="Ultrasound">Ultrasound</option>
+                    <option value="CT">CT</option>
+                    <option value="Clinical photo">Clinical photo</option>
+                    <option value="Clinical video">Clinical video</option>
+                  </select></label
+                ><label
+                  >Title<input
+                    name="title"
+                    placeholder="Thoracic radiographs"
+                    required /></label
+                ><label
+                  >Captured at<input
+                    name="capturedAt"
+                    type="datetime-local" /></label
+                ><label
+                  >Status<select name="status">
+                    <option value="needs-review">Needs review</option>
+                    <option value="reported">Reported</option>
+                  </select></label
+                ><label
+                  >Storage type<select name="storageType">
+                    <option value="local-media">Local media</option>
+                    <option value="external-pacs">External PACS</option>
+                  </select></label
+                ><label
+                  >File name<input
+                    name="fileName"
+                    placeholder="study.dcm / photo.jpg" /></label
+                ><label
+                  >Thumbnail status<select name="thumbnailStatus">
+                    <option value="queued">Queued</option>
+                    <option value="generated">Generated</option>
+                  </select></label
+                ><label
+                  >PACS link<input
+                    name="pacsLink"
+                    placeholder="pacs://..." /></label
+                ><label
+                  >Annotations<input
+                    name="annotations"
+                    placeholder="Lesion edge, fracture line" /></label
+                ><label
+                  >Annotation note<input
+                    name="annotationNote"
+                    placeholder="Mild erythema, suspected fracture" /></label
+                ><label
+                  >Region<input
+                    name="region"
+                    placeholder="thorax, abdomen, limb" /></label
+                ><label
+                  >Media type<select name="mediaType">
+                    <option value="photo">Photo</option>
+                    <option value="video">Video</option>
+                  </select></label
+                ><label
+                  >Media caption<input
+                    name="mediaCaption"
+                    placeholder="Abdominal scar photo" /></label
+                ><label
+                  >Radiologist<input
+                    name="radiologist"
+                    placeholder="Dr. Demo" /></label
+                ><label
+                  >Impression<textarea
+                    name="impression"
+                    placeholder="Diagnostic report impression"
+                  ></textarea></label
+                ><button type="submit">Record diagnostic</button>
+              </form>
+            </section>
+          </div>
         </section>
-        <section class="view" data-panel="audit"><section class="panel"><div class="panel-header"><div><p class="eyebrow">Enterprise controls</p><h2>Audit trail</h2></div></div><div id="audit-list" class="record-list"></div></section></section>
-        <section class="view" data-panel="roadmap"><section class="panel"><div class="panel-header"><div><p class="eyebrow">Roadmap</p><h2>Build phases</h2></div></div><div class="grid two" id="phases"></div></section><section class="panel"><div class="panel-header"><div><p class="eyebrow">Blueprint</p><h2>Product domains</h2></div></div><div class="grid three" id="domains"></div></section></section>
+        <section class="view" data-panel="labs">
+          <div class="metrics compact-metrics" id="lab-metrics"></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F095-F108</p>
+                  <h2>Laboratory workflow</h2>
+                </div>
+              </div>
+              <div class="grid three" id="lab-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Lab alerts</h2>
+                <div id="lab-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Lab worklist</h2>
+                <div id="lab-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Create lab order</h2></div>
+              <form class="form-card" data-form="lab">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="lab-patient-options"
+                    required
+                  ></select></label
+                ><label
+                  >Visit<select
+                    name="visitId"
+                    id="lab-visit-options"
+                  ></select></label
+                ><label
+                  >Source<select name="source">
+                    <option value="in-house">In-house</option>
+                    <option value="external">External</option>
+                  </select></label
+                ><label
+                  >Provider<input
+                    name="provider"
+                    placeholder="Clinic Lab / IDEXX / Laboklin" /></label
+                ><label
+                  >Country<input
+                    name="country"
+                    placeholder="XK"
+                    value="XK" /></label
+                ><label
+                  >Test type<input
+                    name="testType"
+                    placeholder="Blood chemistry"
+                    required /></label
+                ><label
+                  >Panel<input
+                    name="panelName"
+                    placeholder="CBC + chemistry"
+                    required /></label
+                ><label
+                  >Sample type<input
+                    name="sampleType"
+                    placeholder="serum, urine, feces" /></label
+                ><label
+                  >Ordered at<input
+                    name="orderedAt"
+                    type="datetime-local" /></label
+                ><label
+                  >Collected at<input
+                    name="collectedAt"
+                    type="datetime-local" /></label
+                ><label
+                  >Status<select name="status">
+                    <option value="ordered">Ordered</option>
+                    <option value="sent">Sent</option>
+                    <option value="received">Received</option>
+                    <option value="reviewed">Reviewed</option>
+                  </select></label
+                ><label
+                  >External order ID<input
+                    name="externalOrderId"
+                    placeholder="IDEXX-..." /></label
+                ><label
+                  >PDF file<input
+                    name="pdfFileName"
+                    placeholder="lab-report.pdf" /></label
+                ><label
+                  >Analytes<input
+                    name="analytes"
+                    placeholder="ALT, Creatinine, WBC" /></label
+                ><label
+                  >Critical alerts<input
+                    name="criticalAlerts"
+                    placeholder="Potassium critical high" /></label
+                ><label
+                  >Trend notes<input
+                    name="trendNotes"
+                    placeholder="Creatinine improved from last test" /></label
+                ><label class="checkbox-line"
+                  ><input name="sharedWithOwner" type="checkbox" value="true" />
+                  Shared with owner</label
+                ><label
+                  >Interpretation<textarea
+                    name="interpretation"
+                    placeholder="Clinical interpretation"
+                  ></textarea></label
+                ><button type="submit">Create lab order</button>
+              </form>
+            </section>
+          </div>
+        </section>
+        <section class="view" data-panel="audit">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Enterprise controls</p>
+                <h2>Audit trail</h2>
+              </div>
+            </div>
+            <div id="audit-list" class="record-list"></div>
+          </section>
+        </section>
+        <section class="view" data-panel="roadmap">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Roadmap</p>
+                <h2>Build phases</h2>
+              </div>
+            </div>
+            <div class="grid two" id="phases"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Blueprint</p>
+                <h2>Product domains</h2>
+              </div>
+            </div>
+            <div class="grid three" id="domains"></div>
+          </section>
+        </section>
         <p class="form-status" id="form-status"></p>
       </main>
     </div>

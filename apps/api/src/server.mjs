@@ -1,19 +1,60 @@
-import http from 'node:http';
-import { vetCoreBlueprint } from '../../../packages/shared/vetcore-blueprint.mjs';
-import { getClinicCoreSummary, listOwners, listPatients, listVisits } from '../../../packages/shared/clinic-core.mjs';
-import { getDiagnosticSummary, listDiagnostics } from '../../../packages/shared/diagnostics.mjs';
-import { getHospitalizationSummary, listHospitalizations } from '../../../packages/shared/hospitalizations.mjs';
-import { getPrescriptionSummary, listPrescriptions } from '../../../packages/shared/prescriptions.mjs';
-import { getSurgerySummary, listSurgeries } from '../../../packages/shared/surgeries.mjs';
-import { getVaccinationSummary, listVaccinations } from '../../../packages/shared/vaccinations.mjs';
-import { createDiagnostic, createHospitalization, createOwner, createPatient, createPrescription, createSurgery, createVaccination, createVisit, readClinicState, updateDiagnostic, updateHospitalization, updateOwner, updatePatient, updatePrescription, updateSurgery, updateVaccination, updateVisit } from './clinic-repository.mjs';
+import http from "node:http";
+import { vetCoreBlueprint } from "../../../packages/shared/vetcore-blueprint.mjs";
+import {
+  getClinicCoreSummary,
+  listOwners,
+  listPatients,
+  listVisits,
+} from "../../../packages/shared/clinic-core.mjs";
+import {
+  getDiagnosticSummary,
+  listDiagnostics,
+} from "../../../packages/shared/diagnostics.mjs";
+import {
+  getHospitalizationSummary,
+  listHospitalizations,
+} from "../../../packages/shared/hospitalizations.mjs";
+import { getLabSummary, listLabs } from "../../../packages/shared/labs.mjs";
+import {
+  getPrescriptionSummary,
+  listPrescriptions,
+} from "../../../packages/shared/prescriptions.mjs";
+import {
+  getSurgerySummary,
+  listSurgeries,
+} from "../../../packages/shared/surgeries.mjs";
+import {
+  getVaccinationSummary,
+  listVaccinations,
+} from "../../../packages/shared/vaccinations.mjs";
+import {
+  createDiagnostic,
+  createHospitalization,
+  createLab,
+  createOwner,
+  createPatient,
+  createPrescription,
+  createSurgery,
+  createVaccination,
+  createVisit,
+  readClinicState,
+  updateDiagnostic,
+  updateHospitalization,
+  updateLab,
+  updateOwner,
+  updatePatient,
+  updatePrescription,
+  updateSurgery,
+  updateVaccination,
+  updateVisit,
+} from "./clinic-repository.mjs";
 
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, {
-    'content-type': 'application/json; charset=utf-8',
-    'access-control-allow-origin': '*',
-    'access-control-allow-methods': 'GET,POST,PATCH,OPTIONS',
-    'access-control-allow-headers': 'content-type'
+    "content-type": "application/json; charset=utf-8",
+    "access-control-allow-origin": "*",
+    "access-control-allow-methods": "GET,POST,PATCH,OPTIONS",
+    "access-control-allow-headers": "content-type",
   });
   response.end(JSON.stringify(payload, null, 2));
 }
@@ -22,13 +63,13 @@ async function readBody(request) {
   const chunks = [];
   for await (const chunk of request) chunks.push(chunk);
   if (!chunks.length) return {};
-  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
 function matchId(pathname, prefix) {
   if (!pathname.startsWith(`${prefix}/`)) return null;
   const id = pathname.slice(prefix.length + 1);
-  return id && !id.includes('/') ? id : null;
+  return id && !id.includes("/") ? id : null;
 }
 
 async function sendClinicPayload(response, mapper) {
@@ -38,202 +79,366 @@ async function sendClinicPayload(response, mapper) {
 
 export function createVetCoreApiServer() {
   return http.createServer(async (request, response) => {
-    const url = new URL(request.url || '/', `http://${request.headers.host}`);
+    const url = new URL(request.url || "/", `http://${request.headers.host}`);
 
     try {
-      if (request.method === 'OPTIONS') {
+      if (request.method === "OPTIONS") {
         sendJson(response, 204, {});
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/health') {
-        sendJson(response, 200, { status: 'ok', product: vetCoreBlueprint.product, timestamp: new Date().toISOString() });
+      if (request.method === "GET" && url.pathname === "/health") {
+        sendJson(response, 200, {
+          status: "ok",
+          product: vetCoreBlueprint.product,
+          timestamp: new Date().toISOString(),
+        });
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/blueprint') {
+      if (request.method === "GET" && url.pathname === "/blueprint") {
         sendJson(response, 200, vetCoreBlueprint);
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/summary') {
-        await sendClinicPayload(response, (state) => getClinicCoreSummary(state));
+      if (request.method === "GET" && url.pathname === "/clinic/summary") {
+        await sendClinicPayload(response, (state) =>
+          getClinicCoreSummary(state),
+        );
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/owners') {
-        await sendClinicPayload(response, (state) => ({ items: listOwners(state) }));
+      if (request.method === "GET" && url.pathname === "/clinic/owners") {
+        await sendClinicPayload(response, (state) => ({
+          items: listOwners(state),
+        }));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/patients') {
-        await sendClinicPayload(response, (state) => ({ items: listPatients(state) }));
+      if (request.method === "GET" && url.pathname === "/clinic/patients") {
+        await sendClinicPayload(response, (state) => ({
+          items: listPatients(state),
+        }));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/visits') {
-        await sendClinicPayload(response, (state) => ({ items: listVisits(state) }));
+      if (request.method === "GET" && url.pathname === "/clinic/visits") {
+        await sendClinicPayload(response, (state) => ({
+          items: listVisits(state),
+        }));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/vaccinations/summary') {
-        await sendClinicPayload(response, (state) => getVaccinationSummary(state));
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/vaccinations/summary"
+      ) {
+        await sendClinicPayload(response, (state) =>
+          getVaccinationSummary(state),
+        );
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/vaccinations') {
-        await sendClinicPayload(response, (state) => ({ items: listVaccinations(state) }));
+      if (request.method === "GET" && url.pathname === "/clinic/vaccinations") {
+        await sendClinicPayload(response, (state) => ({
+          items: listVaccinations(state),
+        }));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/prescriptions/summary') {
-        await sendClinicPayload(response, (state) => getPrescriptionSummary(state));
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/prescriptions/summary"
+      ) {
+        await sendClinicPayload(response, (state) =>
+          getPrescriptionSummary(state),
+        );
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/prescriptions') {
-        await sendClinicPayload(response, (state) => ({ items: listPrescriptions(state) }));
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/prescriptions"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listPrescriptions(state),
+        }));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/surgeries/summary') {
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/surgeries/summary"
+      ) {
         await sendClinicPayload(response, (state) => getSurgerySummary(state));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/surgeries') {
-        await sendClinicPayload(response, (state) => ({ items: listSurgeries(state) }));
+      if (request.method === "GET" && url.pathname === "/clinic/surgeries") {
+        await sendClinicPayload(response, (state) => ({
+          items: listSurgeries(state),
+        }));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/hospitalizations/summary') {
-        await sendClinicPayload(response, (state) => getHospitalizationSummary(state));
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/hospitalizations/summary"
+      ) {
+        await sendClinicPayload(response, (state) =>
+          getHospitalizationSummary(state),
+        );
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/hospitalizations') {
-        await sendClinicPayload(response, (state) => ({ items: listHospitalizations(state) }));
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/hospitalizations"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listHospitalizations(state),
+        }));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/diagnostics/summary') {
-        await sendClinicPayload(response, (state) => getDiagnosticSummary(state));
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/diagnostics/summary"
+      ) {
+        await sendClinicPayload(response, (state) =>
+          getDiagnosticSummary(state),
+        );
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/diagnostics') {
-        await sendClinicPayload(response, (state) => ({ items: listDiagnostics(state) }));
+      if (request.method === "GET" && url.pathname === "/clinic/diagnostics") {
+        await sendClinicPayload(response, (state) => ({
+          items: listDiagnostics(state),
+        }));
         return;
       }
 
-      if (request.method === 'GET' && url.pathname === '/clinic/audit') {
-        await sendClinicPayload(response, (state) => ({ items: [...state.auditEvents].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 100) }));
+      if (request.method === "GET" && url.pathname === "/clinic/labs/summary") {
+        await sendClinicPayload(response, (state) => getLabSummary(state));
         return;
       }
 
-      if (request.method === 'POST' && url.pathname === '/clinic/owners') {
+      if (request.method === "GET" && url.pathname === "/clinic/labs") {
+        await sendClinicPayload(response, (state) => ({
+          items: listLabs(state),
+        }));
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/clinic/audit") {
+        await sendClinicPayload(response, (state) => ({
+          items: [...state.auditEvents]
+            .sort((a, b) => String(b.at).localeCompare(String(a.at)))
+            .slice(0, 100),
+        }));
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/clinic/owners") {
         sendJson(response, 201, await createOwner(await readBody(request)));
         return;
       }
 
-      if (request.method === 'POST' && url.pathname === '/clinic/patients') {
+      if (request.method === "POST" && url.pathname === "/clinic/patients") {
         sendJson(response, 201, await createPatient(await readBody(request)));
         return;
       }
 
-      if (request.method === 'POST' && url.pathname === '/clinic/visits') {
+      if (request.method === "POST" && url.pathname === "/clinic/visits") {
         sendJson(response, 201, await createVisit(await readBody(request)));
         return;
       }
 
-      if (request.method === 'POST' && url.pathname === '/clinic/vaccinations') {
-        sendJson(response, 201, await createVaccination(await readBody(request)));
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/vaccinations"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createVaccination(await readBody(request)),
+        );
         return;
       }
 
-      if (request.method === 'POST' && url.pathname === '/clinic/prescriptions') {
-        sendJson(response, 201, await createPrescription(await readBody(request)));
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/prescriptions"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createPrescription(await readBody(request)),
+        );
         return;
       }
 
-      if (request.method === 'POST' && url.pathname === '/clinic/surgeries') {
+      if (request.method === "POST" && url.pathname === "/clinic/surgeries") {
         sendJson(response, 201, await createSurgery(await readBody(request)));
         return;
       }
 
-      if (request.method === 'POST' && url.pathname === '/clinic/hospitalizations') {
-        sendJson(response, 201, await createHospitalization(await readBody(request)));
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/hospitalizations"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createHospitalization(await readBody(request)),
+        );
         return;
       }
 
-      if (request.method === 'POST' && url.pathname === '/clinic/diagnostics') {
-        sendJson(response, 201, await createDiagnostic(await readBody(request)));
+      if (request.method === "POST" && url.pathname === "/clinic/diagnostics") {
+        sendJson(
+          response,
+          201,
+          await createDiagnostic(await readBody(request)),
+        );
         return;
       }
 
-      const ownerId = matchId(url.pathname, '/clinic/owners');
-      if (request.method === 'PATCH' && ownerId) {
+      if (request.method === "POST" && url.pathname === "/clinic/labs") {
+        sendJson(response, 201, await createLab(await readBody(request)));
+        return;
+      }
+
+      const ownerId = matchId(url.pathname, "/clinic/owners");
+      if (request.method === "PATCH" && ownerId) {
         const owner = await updateOwner(ownerId, await readBody(request));
-        sendJson(response, owner ? 200 : 404, owner || { error: 'Owner not found' });
+        sendJson(
+          response,
+          owner ? 200 : 404,
+          owner || { error: "Owner not found" },
+        );
         return;
       }
 
-      const patientId = matchId(url.pathname, '/clinic/patients');
-      if (request.method === 'PATCH' && patientId) {
+      const patientId = matchId(url.pathname, "/clinic/patients");
+      if (request.method === "PATCH" && patientId) {
         const patient = await updatePatient(patientId, await readBody(request));
-        sendJson(response, patient ? 200 : 404, patient || { error: 'Patient not found' });
+        sendJson(
+          response,
+          patient ? 200 : 404,
+          patient || { error: "Patient not found" },
+        );
         return;
       }
 
-      const visitId = matchId(url.pathname, '/clinic/visits');
-      if (request.method === 'PATCH' && visitId) {
+      const visitId = matchId(url.pathname, "/clinic/visits");
+      if (request.method === "PATCH" && visitId) {
         const visit = await updateVisit(visitId, await readBody(request));
-        sendJson(response, visit ? 200 : 404, visit || { error: 'Visit not found' });
+        sendJson(
+          response,
+          visit ? 200 : 404,
+          visit || { error: "Visit not found" },
+        );
         return;
       }
 
-      const vaccinationId = matchId(url.pathname, '/clinic/vaccinations');
-      if (request.method === 'PATCH' && vaccinationId) {
-        const vaccination = await updateVaccination(vaccinationId, await readBody(request));
-        sendJson(response, vaccination ? 200 : 404, vaccination || { error: 'Vaccination not found' });
+      const vaccinationId = matchId(url.pathname, "/clinic/vaccinations");
+      if (request.method === "PATCH" && vaccinationId) {
+        const vaccination = await updateVaccination(
+          vaccinationId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          vaccination ? 200 : 404,
+          vaccination || { error: "Vaccination not found" },
+        );
         return;
       }
 
-      const prescriptionId = matchId(url.pathname, '/clinic/prescriptions');
-      if (request.method === 'PATCH' && prescriptionId) {
-        const prescription = await updatePrescription(prescriptionId, await readBody(request));
-        sendJson(response, prescription ? 200 : 404, prescription || { error: 'Prescription not found' });
+      const prescriptionId = matchId(url.pathname, "/clinic/prescriptions");
+      if (request.method === "PATCH" && prescriptionId) {
+        const prescription = await updatePrescription(
+          prescriptionId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          prescription ? 200 : 404,
+          prescription || { error: "Prescription not found" },
+        );
         return;
       }
 
-      const surgeryId = matchId(url.pathname, '/clinic/surgeries');
-      if (request.method === 'PATCH' && surgeryId) {
+      const surgeryId = matchId(url.pathname, "/clinic/surgeries");
+      if (request.method === "PATCH" && surgeryId) {
         const surgery = await updateSurgery(surgeryId, await readBody(request));
-        sendJson(response, surgery ? 200 : 404, surgery || { error: 'Surgery not found' });
+        sendJson(
+          response,
+          surgery ? 200 : 404,
+          surgery || { error: "Surgery not found" },
+        );
         return;
       }
 
-      const hospitalizationId = matchId(url.pathname, '/clinic/hospitalizations');
-      if (request.method === 'PATCH' && hospitalizationId) {
-        const stay = await updateHospitalization(hospitalizationId, await readBody(request));
-        sendJson(response, stay ? 200 : 404, stay || { error: 'Hospitalization not found' });
+      const hospitalizationId = matchId(
+        url.pathname,
+        "/clinic/hospitalizations",
+      );
+      if (request.method === "PATCH" && hospitalizationId) {
+        const stay = await updateHospitalization(
+          hospitalizationId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          stay ? 200 : 404,
+          stay || { error: "Hospitalization not found" },
+        );
         return;
       }
 
-      const diagnosticId = matchId(url.pathname, '/clinic/diagnostics');
-      if (request.method === 'PATCH' && diagnosticId) {
-        const diagnostic = await updateDiagnostic(diagnosticId, await readBody(request));
-        sendJson(response, diagnostic ? 200 : 404, diagnostic || { error: 'Diagnostic not found' });
+      const diagnosticId = matchId(url.pathname, "/clinic/diagnostics");
+      if (request.method === "PATCH" && diagnosticId) {
+        const diagnostic = await updateDiagnostic(
+          diagnosticId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          diagnostic ? 200 : 404,
+          diagnostic || { error: "Diagnostic not found" },
+        );
+        return;
+      }
+
+      const labId = matchId(url.pathname, "/clinic/labs");
+      if (request.method === "PATCH" && labId) {
+        const lab = await updateLab(labId, await readBody(request));
+        sendJson(response, lab ? 200 : 404, lab || { error: "Lab not found" });
         return;
       }
 
       sendJson(response, 404, {
-        error: 'Not found',
-        endpoints: ['/health', '/blueprint', '/clinic/summary', '/clinic/owners', '/clinic/patients', '/clinic/visits', '/clinic/vaccinations', '/clinic/prescriptions', '/clinic/surgeries', '/clinic/hospitalizations', '/clinic/diagnostics', '/clinic/audit']
+        error: "Not found",
+        endpoints: [
+          "/health",
+          "/blueprint",
+          "/clinic/summary",
+          "/clinic/owners",
+          "/clinic/patients",
+          "/clinic/visits",
+          "/clinic/vaccinations",
+          "/clinic/prescriptions",
+          "/clinic/surgeries",
+          "/clinic/hospitalizations",
+          "/clinic/diagnostics",
+          "/clinic/labs",
+          "/clinic/audit",
+        ],
       });
     } catch (error) {
-      sendJson(response, 400, { error: error.message || 'Bad request' });
+      sendJson(response, 400, { error: error.message || "Bad request" });
     }
   });
 }
-

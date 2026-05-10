@@ -9,6 +9,7 @@ const viewTitles = {
   surgery: "Surgery",
   hospitalizations: "Hospitalization & Boarding",
   diagnostics: "Diagnostics & Imaging",
+  labs: "Laboratory",
   audit: "Audit Trail",
   roadmap: "Product Roadmap",
 };
@@ -30,6 +31,8 @@ let latestState = {
   hospitalizations: [],
   diagnosticSummary: null,
   diagnostics: [],
+  labSummary: null,
+  labs: [],
   auditEvents: [],
 };
 
@@ -92,6 +95,7 @@ const modalLabels = {
   surgery: "Plan surgery",
   hospitalization: "Admit patient",
   diagnostic: "Record diagnostic",
+  lab: "Create lab order",
 };
 function openModalPanel(panel) {
   if (!panel) return;
@@ -175,6 +179,7 @@ const detailCollections = {
   surgery: "surgeries",
   hospitalization: "hospitalizations",
   diagnostic: "diagnostics",
+  lab: "labs",
   audit: "auditEvents",
 };
 const detailTitles = {
@@ -185,6 +190,7 @@ const detailTitles = {
   surgery: "Surgery detail",
   hospitalization: "Hospitalization detail",
   diagnostic: "Diagnostic detail",
+  lab: "Lab detail",
   audit: "Audit event",
 };
 function ensureDetailModal() {
@@ -420,6 +426,42 @@ function recordDetail(type, record) {
       ),
     ].join("");
   }
+  if (type === "lab") {
+    return [
+      detailSection("Lab order", [
+        ["Patient", patientName],
+        ["Panel", record.panelName],
+        ["Test type", record.testType],
+        ["Source", record.source],
+        ["Provider", record.provider],
+        ["Country", record.country],
+        ["Status", record.status],
+        ["Risk", record.riskStatus],
+      ]),
+      detailSection(
+        "Results and interpretation",
+        [
+          ["Sample", record.sampleType],
+          [
+            "Ordered",
+            record.orderedAt
+              ? new Date(record.orderedAt).toLocaleString()
+              : "-",
+          ],
+          [
+            "Collected",
+            record.collectedAt
+              ? new Date(record.collectedAt).toLocaleString()
+              : "-",
+          ],
+          ["Parser", record.parserStatus],
+          ["Shared", record.sharedWithOwner ? "Yes" : "No"],
+          ["Interpretation", record.interpretation?.summary],
+        ],
+        `${compactList(record.results, "No results entered.")}${compactList(record.criticalAlerts, "No critical alerts.")}`,
+      ),
+    ].join("");
+  }
   return detailSection(
     "Record",
     Object.entries(record).filter(
@@ -442,6 +484,9 @@ function hospitalizationInputs(stay) {
 function diagnosticInputs(record) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="diagnostic-update" data-id="${record.id}"><h3>Diagnostic input</h3><label>Status<select name="status"><option value="needs-review">needs-review</option><option value="reported">reported</option></select></label><label>Thumbnail<select name="thumbnailStatus"><option value="queued">queued</option><option value="generated">generated</option></select></label><label>Radiologist<input name="radiologist" value="${record.report?.radiologist || ""}" /></label><label>Impression<textarea name="impression">${record.report?.impression || ""}</textarea></label><button type="submit">Save diagnostic info</button></form><form class="form-card" data-detail-form="diagnostic-annotation" data-id="${record.id}"><h3>Add annotation</h3><label>Label<input name="label" required /></label><label>Region<input name="region" /></label><label>Note<input name="note" /></label><button type="submit">Add annotation</button></form></div>`;
 }
+function labInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="lab-update" data-id="${record.id}"><h3>Lab input</h3><label>Status<select name="status"><option value="ordered">ordered</option><option value="sent">sent</option><option value="received">received</option><option value="reviewed">reviewed</option></select></label><label>Parser<select name="parserStatus"><option value="manual-entry">manual-entry</option><option value="queued">queued</option><option value="parsed">parsed</option><option value="failed">failed</option></select></label><label>Interpretation<textarea name="interpretation">${record.interpretation?.summary || ""}</textarea></label><label class="checkbox-line"><input name="sharedWithOwner" type="checkbox" value="true" ${record.sharedWithOwner ? "checked" : ""} /> Shared with owner</label><button type="submit">Save lab info</button></form><form class="form-card" data-detail-form="lab-result" data-id="${record.id}"><h3>Add result</h3><label>Analyte<input name="analyte" required /></label><label>Value<input name="value" type="number" step="0.01" /></label><label>Unit<input name="unit" /></label><label>Ref low<input name="referenceLow" type="number" step="0.01" /></label><label>Ref high<input name="referenceHigh" type="number" step="0.01" /></label><button type="submit">Add result</button></form><form class="form-card" data-detail-form="lab-alert" data-id="${record.id}"><h3>Add critical alert</h3><label>Alert<input name="alert" required /></label><button type="submit">Add alert</button></form></div>`;
+}
 function visitInputs(visit) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="visit-soap" data-id="${visit.id}"><h3>Clinical input</h3><label>Anamnesis<textarea name="anamnesis">${visit.anamnesis || ""}</textarea></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" value="${visit.physicalExam?.temperatureC || ""}" /></label><label>Pulse bpm<input name="pulseBpm" type="number" value="${visit.physicalExam?.pulseBpm || ""}" /></label><label>Respiration rpm<input name="respirationRpm" type="number" value="${visit.physicalExam?.respirationRpm || ""}" /></label><label>Diagnosis<input name="diagnosis" value="${visit.diagnoses?.[0]?.label || ""}" /></label><label>Treatment plan<input name="treatmentPlan" value="${(visit.treatmentPlan || []).join(", ")}" /></label><button type="submit">Save visit info</button></form><form class="form-card" data-detail-form="visit-procedure" data-id="${visit.id}"><h3>Add procedure</h3><label>Procedure<input name="procedureName" required /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" /></label><button type="submit">Add procedure</button></form></div>`;
 }
@@ -461,6 +506,7 @@ function openRecordDetail(type, id) {
     prescription: prescriptionInputs,
     hospitalization: hospitalizationInputs,
     diagnostic: diagnosticInputs,
+    lab: labInputs,
     visit: visitInputs,
     surgery: surgeryInputs,
   };
@@ -486,6 +532,11 @@ function openRecordDetail(type, id) {
       record.status || "needs-review";
     panel.querySelector('[name="thumbnailStatus"]').value =
       record.thumbnailStatus || "queued";
+  }
+  if (type === "lab") {
+    panel.querySelector('[name="status"]').value = record.status || "ordered";
+    panel.querySelector('[name="parserStatus"]').value =
+      record.parserStatus || "manual-entry";
   }
   openModalPanel(panel);
 }
@@ -604,6 +655,17 @@ function diagnosticRow(record) {
       : `<button class="text-button" type="button" data-finalize-diagnostic-id="${record.id}">Finalize report</button>`;
   return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.title}</h3><p class="record-meta">${record.modality} · ${new Date(record.capturedAt).toLocaleString()} · ${record.fileName || "no file name"}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${thumbAction}${reportAction}<button class="text-button" type="button" data-detail-type="diagnostic" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Thumbnail ${record.thumbnailStatus} · PACS ${record.pacsLink ? "linked" : "not linked"} · AI pending ${record.aiPending}</p><p class="record-meta">Impression: ${record.report?.impression || "Report open"}</p><div class="badges">${annotations}<span class="badge">${record.annotationCount} annotations</span><span class="badge">${record.mediaCount} media</span></div></article>`;
 }
+function labRow(record) {
+  const statusClass = record.riskStatus === "critical" ? "alert" : "ok";
+  const reviewAction =
+    record.status === "reviewed"
+      ? ""
+      : `<button class="text-button" type="button" data-review-lab-id="${record.id}">Mark reviewed</button>`;
+  const shareAction = record.sharedWithOwner
+    ? ""
+    : `<button class="text-button" type="button" data-share-lab-id="${record.id}">Share</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.panelName}</h3><p class="record-meta">${record.testType} · ${record.provider} · ${record.sampleType}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${reviewAction}${shareAction}<button class="text-button" type="button" data-detail-type="lab" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Status ${record.status} · Results ${record.resultCount} · Critical ${record.criticalCount} · Parser ${record.parserStatus}</p><p class="record-meta">Interpretation: ${record.interpretation?.summary || "Interpretation open"}</p><div class="badges"><span class="badge">${record.source}</span><span class="badge">${record.country}</span><span class="badge">${record.sharedWithOwner ? "owner shared" : "internal"}</span></div></article>`;
+}
 function auditRow(event) {
   return `<article class="record-row"><header><div><h3>${event.summary}</h3><p class="record-meta">${new Date(event.at).toLocaleString()} · ${event.actor}</p></div><div class="visit-actions"><span class="badge">${event.action}</span><span class="badge">${event.entityType}</span></div></header><p class="record-meta">Record: ${event.entityId}</p></article>`;
 }
@@ -657,6 +719,13 @@ function patientTimeline(patient, visits) {
         `<article class="timeline-item"><span>${new Date(record.capturedAt).toLocaleDateString()}</span><strong>${record.modality}: ${record.title}</strong><p>${record.riskStatus} · ${record.annotationCount} annotations · ${record.thumbnailStatus}</p><small>F086-F094 diagnostics workflow</small></article>`,
     )
     .join("");
+  const labItems = latestState.labs
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.orderedAt).toLocaleDateString()}</span><strong>${record.panelName}</strong><p>${record.riskStatus} · ${record.resultCount} results · ${record.provider}</p><small>F095-F108 laboratory workflow</small></article>`,
+    )
+    .join("");
   const weightItems =
     patient.weightHistory
       ?.map(
@@ -670,8 +739,9 @@ function patientTimeline(patient, visits) {
     surgeryItems ||
     stayItems ||
     diagnosticItems ||
+    labItems ||
     weightItems
-    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${weightItems}`
+    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${weightItems}`
     : '<p class="muted">No clinical timeline yet.</p>';
 }
 function patientInputs(patient) {
@@ -749,6 +819,7 @@ function bindTopbar() {
       renderSurgeries();
       renderHospitalizations();
       renderDiagnostics();
+      renderLabs();
       renderAudit();
     });
   document.addEventListener("click", (event) => {
@@ -864,7 +935,7 @@ function splitTags(value) {
 function bindWorkflowActions() {
   document.addEventListener("click", async (event) => {
     const button = event.target.closest(
-      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id]",
+      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id]",
     );
     if (!button) return;
     try {
@@ -1008,6 +1079,38 @@ function bindWorkflowActions() {
         selectedPatientId = record?.patientId || selectedPatientId;
         setStatus("Diagnostic report finalized.");
       }
+      if (button.dataset.reviewLabId) {
+        const lab = latestState.labs.find(
+          (entry) => entry.id === button.dataset.reviewLabId,
+        );
+        await fetchJson(`/clinic/labs/${button.dataset.reviewLabId}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: "reviewed",
+            parserStatus: lab?.parserStatus || "manual-entry",
+            interpretation: {
+              ...(lab?.interpretation || {}),
+              summary:
+                lab?.interpretation?.summary ||
+                "Reviewed by clinician. No additional interpretation entered.",
+              aiStatus: "reviewed",
+            },
+          }),
+        });
+        selectedPatientId = lab?.patientId || selectedPatientId;
+        setStatus("Lab marked reviewed.");
+      }
+      if (button.dataset.shareLabId) {
+        const lab = latestState.labs.find(
+          (entry) => entry.id === button.dataset.shareLabId,
+        );
+        await fetchJson(`/clinic/labs/${button.dataset.shareLabId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ sharedWithOwner: true }),
+        });
+        selectedPatientId = lab?.patientId || selectedPatientId;
+        setStatus("Lab shared with owner.");
+      }
       await render();
     } catch (error) {
       setStatus(error.message, "error");
@@ -1039,6 +1142,7 @@ async function submitForm(form) {
   const data = formData(form);
   if (type === "prescription")
     data.controlledSubstance = data.controlledSubstance === "true";
+  if (type === "lab") data.sharedWithOwner = data.sharedWithOwner === "true";
   const endpoints = {
     owner: "/clinic/owners",
     patient: "/clinic/patients",
@@ -1048,6 +1152,7 @@ async function submitForm(form) {
     surgery: "/clinic/surgeries",
     hospitalization: "/clinic/hospitalizations",
     diagnostic: "/clinic/diagnostics",
+    lab: "/clinic/labs",
   };
   const created = await fetchJson(endpoints[type], {
     method: "POST",
@@ -1060,7 +1165,8 @@ async function submitForm(form) {
     type === "prescription" ||
     type === "surgery" ||
     type === "hospitalization" ||
-    type === "diagnostic"
+    type === "diagnostic" ||
+    type === "lab"
   )
     selectedPatientId = created.patientId;
   form.reset();
@@ -1073,6 +1179,7 @@ async function submitForm(form) {
   if (type === "surgery") switchView("surgery");
   if (type === "hospitalization") switchView("hospitalizations");
   if (type === "diagnostic") switchView("diagnostics");
+  if (type === "lab") switchView("labs");
 }
 function bindForms() {
   document.querySelectorAll("form[data-form]").forEach((form) =>
@@ -1363,6 +1470,64 @@ function bindDetailForms() {
         form.reset();
         setStatus("Annotation added.");
       }
+      if (form.dataset.detailForm === "lab-update") {
+        const lab = latestState.labs.find((entry) => entry.id === id);
+        await fetchJson(`/clinic/labs/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            parserStatus: data.parserStatus,
+            sharedWithOwner: data.sharedWithOwner === "true",
+            interpretation: {
+              ...(lab?.interpretation || {}),
+              summary: data.interpretation,
+              aiStatus: data.interpretation ? "reviewed" : "not-run",
+            },
+          }),
+        });
+        setStatus("Lab info saved.");
+      }
+      if (form.dataset.detailForm === "lab-result") {
+        const lab = latestState.labs.find((entry) => entry.id === id);
+        const value = data.value === "" ? null : Number(data.value || 0);
+        const referenceLow =
+          data.referenceLow === "" ? null : Number(data.referenceLow || 0);
+        const referenceHigh =
+          data.referenceHigh === "" ? null : Number(data.referenceHigh || 0);
+        const flag =
+          value != null && referenceHigh != null && value > referenceHigh
+            ? "high"
+            : value != null && referenceLow != null && value < referenceLow
+              ? "low"
+              : "normal";
+        const results = [
+          ...(lab?.results || []),
+          {
+            analyte: data.analyte,
+            value,
+            unit: data.unit,
+            referenceLow,
+            referenceHigh,
+            flag,
+          },
+        ];
+        await fetchJson(`/clinic/labs/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ results, status: "received" }),
+        });
+        form.reset();
+        setStatus("Lab result added.");
+      }
+      if (form.dataset.detailForm === "lab-alert") {
+        const lab = latestState.labs.find((entry) => entry.id === id);
+        const criticalAlerts = [...(lab?.criticalAlerts || []), data.alert];
+        await fetchJson(`/clinic/labs/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ criticalAlerts }),
+        });
+        form.reset();
+        setStatus("Lab alert added.");
+      }
       await render();
       const detailMap = {
         "owner-profile": "owner",
@@ -1373,6 +1538,9 @@ function bindDetailForms() {
         "hospitalization-task": "hospitalization",
         "diagnostic-update": "diagnostic",
         "diagnostic-annotation": "diagnostic",
+        "lab-update": "lab",
+        "lab-result": "lab",
+        "lab-alert": "lab",
         "visit-soap": "visit",
         "visit-procedure": "visit",
         "surgery-update": "surgery",
@@ -1527,6 +1695,27 @@ function renderDiagnostics() {
   document.querySelector("#diagnostic-list").innerHTML =
     `${recordCount(diagnostics)}${diagnostics.map(diagnosticRow).join("") || '<p class="muted">No diagnostics match the current search.</p>'}`;
 }
+function renderLabs() {
+  const summary = latestState.labSummary;
+  if (!summary) return;
+  const labs = filtered(latestState.labs);
+  const alerts = filtered(summary.alerts);
+  document.querySelector("#lab-metrics").innerHTML = [
+    metric("Lab records", summary.counts.labs),
+    metric("Pending", summary.counts.pending),
+    metric("Critical", summary.counts.critical),
+  ].join("");
+  document.querySelector("#lab-coverage").innerHTML = summary.featureCoverage
+    .map(
+      (coverage) =>
+        `<article class="card"><div class="badges"><span class="badge">${coverage.range}</span></div><h3>${coverage.area}</h3><p>${coverage.description}</p></article>`,
+    )
+    .join("");
+  document.querySelector("#lab-alerts").innerHTML =
+    alerts.map(labRow).join("") || '<p class="muted">No lab alerts.</p>';
+  document.querySelector("#lab-list").innerHTML =
+    `${recordCount(labs)}${labs.map(labRow).join("") || '<p class="muted">No labs match the current search.</p>'}`;
+}
 function renderAudit() {
   const events = filtered(latestState.auditEvents);
   document.querySelector("#audit-list").innerHTML =
@@ -1591,6 +1780,15 @@ function renderWorkQueue() {
         latestState.diagnosticSummary.alerts.length,
       ),
     );
+  if (latestState.labSummary?.alerts.length)
+    items.push(
+      queueItem(
+        "labs",
+        "Lab work pending",
+        "Review pending results, critical alerts or owner sharing.",
+        latestState.labSummary.alerts.length,
+      ),
+    );
   const count = items.length;
   document.querySelector("#queue-count").textContent = `${count} open`;
   document.querySelector("#work-queue").innerHTML =
@@ -1614,6 +1812,8 @@ async function render() {
     hospitalizations,
     diagnosticSummary,
     diagnostics,
+    labSummary,
+    labs,
     auditEvents,
   ] = await Promise.all([
     fetchJson("/blueprint"),
@@ -1631,6 +1831,8 @@ async function render() {
     fetchJson("/clinic/hospitalizations"),
     fetchJson("/clinic/diagnostics/summary"),
     fetchJson("/clinic/diagnostics"),
+    fetchJson("/clinic/labs/summary"),
+    fetchJson("/clinic/labs"),
     fetchJson("/clinic/audit"),
   ]);
   latestState = {
@@ -1649,6 +1851,8 @@ async function render() {
     hospitalizations: hospitalizations.items,
     diagnosticSummary,
     diagnostics: diagnostics.items,
+    labSummary,
+    labs: labs.items,
     auditEvents: auditEvents.items,
   };
   if (!selectedPatientId && latestState.patients[0])
@@ -1690,6 +1894,11 @@ async function render() {
     latestState.patients,
     "name",
   );
+  fillSelect(
+    document.querySelector("#lab-patient-options"),
+    latestState.patients,
+    "name",
+  );
   fillVisitSelect(document.querySelector("#visit-options"), latestState.visits);
   fillVisitSelect(
     document.querySelector("#prescription-visit-options"),
@@ -1707,6 +1916,10 @@ async function render() {
     document.querySelector("#diagnostic-visit-options"),
     latestState.visits,
   );
+  fillVisitSelect(
+    document.querySelector("#lab-visit-options"),
+    latestState.visits,
+  );
   document.querySelector("#metrics").innerHTML = [
     metric("Patients", summary.counts.patients),
     metric("Owners", summary.counts.owners),
@@ -1718,6 +1931,7 @@ async function render() {
     metric("Surgery alerts", surgerySummary.alerts.length),
     metric("Care alerts", hospitalizationSummary.alerts.length),
     metric("Diagnostic alerts", diagnosticSummary.alerts.length),
+    metric("Lab alerts", labSummary.alerts.length),
     metric("Audit events", auditEvents.items.length),
   ].join("");
   document.querySelector("#clinic-summary").innerHTML = summary.featureCoverage
@@ -1734,6 +1948,7 @@ async function render() {
   renderSurgeries();
   renderHospitalizations();
   renderDiagnostics();
+  renderLabs();
   renderAudit();
   document.querySelector("#phases").innerHTML = blueprint.phases
     .map(phaseCard)
