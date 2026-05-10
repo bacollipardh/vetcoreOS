@@ -11,24 +11,29 @@
       <aside class="sidebar">
         <div class="brand-block"><div class="brand-mark">VC</div><div><strong>VetCoreOS</strong><span>Clinic Core</span></div></div>
         <nav class="nav-tabs" aria-label="Primary">
+          <span class="nav-group">Command</span>
           <button class="nav-item active" data-view="dashboard">Dashboard</button>
+          <span class="nav-group">Records</span>
           <button class="nav-item" data-view="patients">Patients</button>
           <button class="nav-item" data-view="owners">Owners</button>
           <button class="nav-item" data-view="visits">Visits</button>
+          <span class="nav-group">Clinical workflows</span>
           <button class="nav-item" data-view="vaccinations">Vaccinations</button>
           <button class="nav-item" data-view="prescriptions">Prescriptions</button>
           <button class="nav-item" data-view="surgery">Surgery</button>
           <button class="nav-item" data-view="hospitalizations">Hospitalization</button>
           <button class="nav-item" data-view="diagnostics">Diagnostics</button>
+          <span class="nav-group">Controls</span>
           <button class="nav-item" data-view="audit">Audit</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
         <div class="sidebar-note"><span>P2</span><p>Coverage: F001-F094</p></div>
       </aside>
       <main class="workspace">
-        <header class="topbar"><div><p class="eyebrow">Pan-European Veterinary SaaS</p><h1 id="view-title">Clinic Dashboard</h1></div><div class="api-pill" id="api-status">API</div></header>
+        <header class="topbar"><div><p class="eyebrow">Pan-European Veterinary SaaS</p><h1 id="view-title">Clinic Dashboard</h1></div><div class="topbar-tools"><label class="search-box"><span>Search</span><input id="global-search" type="search" placeholder="Patient, owner, medication, cage..." /></label><div class="api-pill" id="api-status">API</div></div></header>
         <section class="view active" data-panel="dashboard">
           <div class="metrics" id="metrics"></div>
+          <section class="panel command-panel"><div class="panel-header"><div><p class="eyebrow">Work queue</p><h2>What needs action now</h2></div><div class="badges"><span class="badge" id="queue-count">0 open</span></div></div><div id="work-queue" class="work-queue"></div></section>
           <div class="grid two">
             <section class="panel"><div class="panel-header"><div><p class="eyebrow">Clinical risk</p><h2>Critical patient signals</h2></div></div><div id="risk-list" class="record-list"></div></section>
             <section class="panel"><div class="panel-header"><div><p class="eyebrow">Today</p><h2>Recent visits</h2></div></div><div id="recent-visits" class="record-list"></div></section>
