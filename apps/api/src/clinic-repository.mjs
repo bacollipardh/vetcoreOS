@@ -36,8 +36,21 @@ function normalizeState(state) {
     prescriptions: Array.isArray(state.prescriptions) ? state.prescriptions : [],
     surgeries: Array.isArray(state.surgeries) ? state.surgeries : [],
     hospitalizations: Array.isArray(state.hospitalizations) ? state.hospitalizations : [],
-    diagnostics: Array.isArray(state.diagnostics) ? state.diagnostics : []
+    diagnostics: Array.isArray(state.diagnostics) ? state.diagnostics : [],
+    auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents : []
   };
+}
+
+function appendAudit(state, action, entityType, entityId, summary) {
+  state.auditEvents.push({
+    id: makeId('audit'),
+    at: nowIso(),
+    actor: 'Dr. Demo',
+    action,
+    entityType,
+    entityId,
+    summary
+  });
 }
 export async function readClinicState() {
   try {
@@ -82,6 +95,7 @@ export async function createOwner(input) {
 
   if (!owner.displayName) throw new Error('displayName is required');
   state.owners.push(owner);
+  appendAudit(state, 'created', 'owner', owner.id, `Created owner ${owner.displayName}`);
   await writeClinicState(state);
   return owner;
 }
@@ -91,6 +105,7 @@ export async function updateOwner(id, input) {
   const index = state.owners.findIndex((owner) => owner.id === id);
   if (index === -1) return null;
   state.owners[index] = { ...state.owners[index], ...input, id };
+  appendAudit(state, 'updated', 'owner', id, `Updated owner ${state.owners[index].displayName}`);
   await writeClinicState(state);
   return state.owners[index];
 }
@@ -124,6 +139,7 @@ export async function createPatient(input) {
   if (!patient.name) throw new Error('name is required');
   if (!patient.ownerIds.length) throw new Error('valid ownerId is required');
   state.patients.push(patient);
+  appendAudit(state, 'created', 'patient', patient.id, `Created patient ${patient.name}`);
   await writeClinicState(state);
   return patient;
 }
@@ -133,6 +149,7 @@ export async function updatePatient(id, input) {
   const index = state.patients.findIndex((patient) => patient.id === id);
   if (index === -1) return null;
   state.patients[index] = { ...state.patients[index], ...input, id };
+  appendAudit(state, 'updated', 'patient', id, `Updated patient ${state.patients[index].name}`);
   await writeClinicState(state);
   return state.patients[index];
 }
@@ -171,6 +188,7 @@ export async function createVisit(input) {
   };
 
   state.visits.push(visit);
+  appendAudit(state, 'created', 'visit', visit.id, `Created visit ${visit.visitType}`);
   await writeClinicState(state);
   return visit;
 }
@@ -180,6 +198,7 @@ export async function updateVisit(id, input) {
   const index = state.visits.findIndex((visit) => visit.id === id);
   if (index === -1) return null;
   state.visits[index] = { ...state.visits[index], ...input, id };
+  appendAudit(state, 'updated', 'visit', id, `Updated visit ${state.visits[index].visitType}`);
   await writeClinicState(state);
   return state.visits[index];
 }
@@ -206,6 +225,7 @@ export async function createVaccination(input) {
     certificateStatus: normalizeText(input.certificateStatus, 'ready-for-pdf')
   };
   state.vaccinations.push(vaccination);
+  appendAudit(state, 'created', 'vaccination', vaccination.id, `Recorded vaccine ${vaccination.vaccineName}`);
   await writeClinicState(state);
   return vaccination;
 }
@@ -215,6 +235,7 @@ export async function updateVaccination(id, input) {
   const index = state.vaccinations.findIndex((vaccination) => vaccination.id === id);
   if (index === -1) return null;
   state.vaccinations[index] = { ...state.vaccinations[index], ...input, id };
+  appendAudit(state, 'updated', 'vaccination', id, `Updated vaccine ${state.vaccinations[index].vaccineName}`);
   await writeClinicState(state);
   return state.vaccinations[index];
 }
@@ -257,6 +278,7 @@ export async function createPrescription(input) {
   };
 
   state.prescriptions.push(prescription);
+  appendAudit(state, 'created', 'prescription', prescription.id, `Created prescription ${prescription.medicationName}`);
   await writeClinicState(state);
   return prescription;
 }
@@ -266,6 +288,7 @@ export async function updatePrescription(id, input) {
   const index = state.prescriptions.findIndex((prescription) => prescription.id === id);
   if (index === -1) return null;
   state.prescriptions[index] = { ...state.prescriptions[index], ...input, id };
+  appendAudit(state, 'updated', 'prescription', id, `Updated prescription ${state.prescriptions[index].medicationName}`);
   await writeClinicState(state);
   return state.prescriptions[index];
 }
@@ -297,6 +320,7 @@ export async function createSurgery(input) {
     followUpDueAt: normalizeText(input.followUpDueAt) || null
   };
   state.surgeries.push(surgery);
+  appendAudit(state, 'created', 'surgery', surgery.id, `Planned surgery ${surgery.procedureName}`);
   await writeClinicState(state);
   return surgery;
 }
@@ -306,6 +330,7 @@ export async function updateSurgery(id, input) {
   const index = state.surgeries.findIndex((surgery) => surgery.id === id);
   if (index === -1) return null;
   state.surgeries[index] = { ...state.surgeries[index], ...input, id };
+  appendAudit(state, 'updated', 'surgery', id, `Updated surgery ${state.surgeries[index].procedureName}`);
   await writeClinicState(state);
   return state.surgeries[index];
 }
@@ -351,6 +376,7 @@ export async function createHospitalization(input) {
     dischargePlan: normalizeTags(input.dischargePlan)
   };
   state.hospitalizations.push(stay);
+  appendAudit(state, 'created', 'hospitalization', stay.id, `Admitted patient to ${stay.cage}`);
   await writeClinicState(state);
   return stay;
 }
@@ -360,6 +386,7 @@ export async function updateHospitalization(id, input) {
   const index = state.hospitalizations.findIndex((stay) => stay.id === id);
   if (index === -1) return null;
   state.hospitalizations[index] = { ...state.hospitalizations[index], ...input, id };
+  appendAudit(state, 'updated', 'hospitalization', id, `Updated stay ${state.hospitalizations[index].cage}`);
   await writeClinicState(state);
   return state.hospitalizations[index];
 }
@@ -394,6 +421,7 @@ export async function createDiagnostic(input) {
     }
   };
   state.diagnostics.push(diagnostic);
+  appendAudit(state, 'created', 'diagnostic', diagnostic.id, `Recorded diagnostic ${diagnostic.title}`);
   await writeClinicState(state);
   return diagnostic;
 }
@@ -403,6 +431,7 @@ export async function updateDiagnostic(id, input) {
   const index = state.diagnostics.findIndex((record) => record.id === id);
   if (index === -1) return null;
   state.diagnostics[index] = { ...state.diagnostics[index], ...input, id };
+  appendAudit(state, 'updated', 'diagnostic', id, `Updated diagnostic ${state.diagnostics[index].title}`);
   await writeClinicState(state);
   return state.diagnostics[index];
 }

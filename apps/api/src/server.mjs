@@ -126,6 +126,11 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      if (request.method === 'GET' && url.pathname === '/clinic/audit') {
+        await sendClinicPayload(response, (state) => ({ items: [...state.auditEvents].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 100) }));
+        return;
+      }
+
       if (request.method === 'POST' && url.pathname === '/clinic/owners') {
         sendJson(response, 201, await createOwner(await readBody(request)));
         return;
@@ -224,7 +229,7 @@ export function createVetCoreApiServer() {
 
       sendJson(response, 404, {
         error: 'Not found',
-        endpoints: ['/health', '/blueprint', '/clinic/summary', '/clinic/owners', '/clinic/patients', '/clinic/visits', '/clinic/vaccinations', '/clinic/prescriptions', '/clinic/surgeries', '/clinic/hospitalizations', '/clinic/diagnostics']
+        endpoints: ['/health', '/blueprint', '/clinic/summary', '/clinic/owners', '/clinic/patients', '/clinic/visits', '/clinic/vaccinations', '/clinic/prescriptions', '/clinic/surgeries', '/clinic/hospitalizations', '/clinic/diagnostics', '/clinic/audit']
       });
     } catch (error) {
       sendJson(response, 400, { error: error.message || 'Bad request' });

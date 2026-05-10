@@ -82,11 +82,40 @@ if (!diagnostic.id || diagnostic.patientId !== patient.id || diagnostic.annotati
 const diagnosticSummary = await request('/clinic/diagnostics/summary');
 if (diagnosticSummary.counts.diagnostics < 1 || diagnosticSummary.featureCoverage.length !== 3) throw new Error('Diagnostic summary failed');
 
+const currentVaccination = await request(`/clinic/vaccinations/${vaccination.id}`, {
+  method: 'PATCH',
+  body: JSON.stringify({ status: 'current', certificateStatus: 'ready-for-pdf' })
+});
+if (currentVaccination.status !== 'current') throw new Error('Vaccination workflow action failed');
+
+const readySurgery = await request(`/clinic/surgeries/${surgery.id}`, {
+  method: 'PATCH',
+  body: JSON.stringify({ consentStatus: 'signed', preOpChecklist: surgery.preOpChecklist.map((item) => ({ ...item, done: true })), status: 'ready' })
+});
+if (readySurgery.consentStatus !== 'signed' || !readySurgery.preOpChecklist.every((item) => item.done)) throw new Error('Surgery checklist workflow action failed');
+
+const dischargedStay = await request(`/clinic/hospitalizations/${hospitalization.id}`, {
+  method: 'PATCH',
+  body: JSON.stringify({ status: 'discharged', treatmentSheet: hospitalization.treatmentSheet.map((task) => ({ ...task, completed: true })), ownerVisibleStatus: 'Patient discharged' })
+});
+if (dischargedStay.status !== 'discharged' || !dischargedStay.treatmentSheet.every((task) => task.completed)) throw new Error('Hospitalization workflow action failed');
+
+const finalizedDiagnostic = await request(`/clinic/diagnostics/${diagnostic.id}`, {
+  method: 'PATCH',
+  body: JSON.stringify({ status: 'reported', thumbnailStatus: 'generated', report: { radiologist: 'Dr. Smoke', impression: 'Smoke finalized report', finalizedAt: new Date().toISOString() } })
+});
+if (finalizedDiagnostic.status !== 'reported' || finalizedDiagnostic.thumbnailStatus !== 'generated') throw new Error('Diagnostic workflow action failed');
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: 'PATCH',
   body: JSON.stringify({ status: 'signed', signedBy: 'Dr. Smoke', signedAt: new Date().toISOString() })
 });
 if (updatedVisit.status !== 'signed') throw new Error('Visit update failed');
+
+const audit = await request('/clinic/audit');
+if (audit.items.length < 10 || !audit.items.some((event) => event.entityType === 'diagnostic' && event.action === 'updated')) {
+  throw new Error('Audit trail did not capture create/update workflow events');
+}
 
 const finalSummary = await request('/clinic/summary');
 if (finalSummary.counts.patients !== initialSummary.counts.patients + 1) throw new Error('Summary did not update after CRUD operations');

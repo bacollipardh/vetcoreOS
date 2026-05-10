@@ -20,6 +20,7 @@
           <button class="nav-item" data-view="surgery">Surgery</button>
           <button class="nav-item" data-view="hospitalizations">Hospitalization</button>
           <button class="nav-item" data-view="diagnostics">Diagnostics</button>
+          <button class="nav-item" data-view="audit">Audit</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
         <div class="sidebar-note"><span>P2</span><p>Coverage: F001-F094</p></div>
@@ -63,6 +64,7 @@
           <div class="metrics compact-metrics" id="diagnostic-metrics"></div>
           <div class="split-layout"><section class="panel"><div class="panel-header"><div><p class="eyebrow">F086-F094</p><h2>Diagnostics & imaging</h2></div></div><div class="grid three" id="diagnostic-coverage"></div><div class="panel-subsection"><h2>Diagnostic alerts</h2><div id="diagnostic-alerts" class="record-list"></div></div><div class="panel-subsection"><h2>Imaging worklist</h2><div id="diagnostic-list" class="record-list"></div></div></section><section class="panel sticky-panel"><div class="panel-header"><h2>Record diagnostic</h2></div><form class="form-card" data-form="diagnostic"><label>Patient<select name="patientId" id="diagnostic-patient-options" required></select></label><label>Visit<select name="visitId" id="diagnostic-visit-options"></select></label><label>Modality<select name="modality"><option value="X-ray">X-ray</option><option value="Ultrasound">Ultrasound</option><option value="CT">CT</option><option value="Clinical photo">Clinical photo</option><option value="Clinical video">Clinical video</option></select></label><label>Title<input name="title" placeholder="Thoracic radiographs" required /></label><label>File name<input name="fileName" placeholder="study.dcm / photo.jpg" /></label><label>PACS link<input name="pacsLink" placeholder="pacs://..." /></label><label>Annotations<input name="annotations" placeholder="Lesion edge, fracture line" /></label><label>Media caption<input name="mediaCaption" placeholder="Abdominal scar photo" /></label><label>Impression<textarea name="impression" placeholder="Diagnostic report impression"></textarea></label><button type="submit">Record diagnostic</button></form></section></div>
         </section>
+        <section class="view" data-panel="audit"><section class="panel"><div class="panel-header"><div><p class="eyebrow">Enterprise controls</p><h2>Audit trail</h2></div></div><div id="audit-list" class="record-list"></div></section></section>
         <section class="view" data-panel="roadmap"><section class="panel"><div class="panel-header"><div><p class="eyebrow">Roadmap</p><h2>Build phases</h2></div></div><div class="grid two" id="phases"></div></section><section class="panel"><div class="panel-header"><div><p class="eyebrow">Blueprint</p><h2>Product domains</h2></div></div><div class="grid three" id="domains"></div></section></section>
         <p class="form-status" id="form-status"></p>
       </main>
