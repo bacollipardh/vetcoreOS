@@ -854,6 +854,197 @@ export const seedStaffRoster = [
   },
 ];
 
+export const seedInventoryItems = [
+  {
+    id: "inv_001",
+    medicationName: "Apoquel 16 mg",
+    atcvetCode: "QD11AH90",
+    dosageForm: "tablet",
+    names: { sq: "Apoquel", en: "Apoquel", de: "Apoquel" },
+    concentration: "16 mg tablet",
+    dosingInstructions: "0.4-0.6 mg/kg PO BID induction, then SID.",
+    countryAvailability: ["XK", "DE", "PL"],
+    restrictions: ["prescription-required"],
+    prescriptionRequired: true,
+    controlledSubstance: false,
+    warehouses: [
+      {
+        location: "Prishtine Main Pharmacy",
+        lotNumber: "APQ-2026-01",
+        expiresAt: "2026-12-31",
+        onHandUnits: 24,
+      },
+    ],
+    reorderThreshold: 18,
+    wastageUnits: 1,
+    supplierId: "sup_001",
+    supplierName: "VetPharm Europe",
+    fifoCostCents: 5200,
+    avcoCostCents: 5050,
+    stocktakeVariance: -1,
+    movements: [
+      {
+        at: "2026-05-03T09:10:00.000Z",
+        type: "dispense",
+        units: -2,
+        warehouse: "Prishtine Main Pharmacy",
+        reason: "Prescription rx_001",
+      },
+      {
+        at: "2026-05-08T11:00:00.000Z",
+        type: "stocktake",
+        units: -1,
+        warehouse: "Prishtine Main Pharmacy",
+        reason: "Broken tablet blister",
+      },
+    ],
+  },
+  {
+    id: "inv_002",
+    medicationName: "Ketamine 100 mg/ml",
+    atcvetCode: "QN01AX03",
+    dosageForm: "injectable",
+    names: { sq: "Ketamine", en: "Ketamine", de: "Ketamin" },
+    concentration: "100 mg/ml",
+    dosingInstructions: "Use per anesthesia protocol and controlled log.",
+    countryAvailability: ["XK", "PL"],
+    restrictions: ["controlled-register", "restricted-storage"],
+    prescriptionRequired: true,
+    controlledSubstance: true,
+    warehouses: [
+      {
+        location: "Controlled Cabinet",
+        lotNumber: "KET-2026-77",
+        expiresAt: "2027-01-31",
+        onHandUnits: 6,
+      },
+    ],
+    reorderThreshold: 4,
+    wastageUnits: 0,
+    supplierId: "sup_002",
+    supplierName: "SecureVet Supply",
+    fifoCostCents: 2850,
+    avcoCostCents: 2850,
+    stocktakeVariance: 0,
+    movements: [
+      {
+        at: "2026-05-09T08:10:00.000Z",
+        type: "receive",
+        units: 2,
+        warehouse: "Controlled Cabinet",
+        reason: "PO po_002 receipt",
+      },
+    ],
+  },
+  {
+    id: "inv_003",
+    medicationName: "Feline GI Diet Pouch",
+    atcvetCode: "NUTR-GI-001",
+    dosageForm: "nutrition",
+    names: { sq: "GI Diet", en: "GI Diet", de: "GI Diat" },
+    concentration: "85 g pouch",
+    dosingInstructions: "Feed per nutrition plan.",
+    countryAvailability: ["XK", "DE"],
+    restrictions: [],
+    prescriptionRequired: false,
+    controlledSubstance: false,
+    warehouses: [
+      {
+        location: "Ward Nutrition Shelf",
+        lotNumber: "GID-2026-14",
+        expiresAt: "2026-08-10",
+        onHandUnits: 9,
+      },
+      {
+        location: "Retail Shelf",
+        lotNumber: "GID-2026-18",
+        expiresAt: "2026-09-15",
+        onHandUnits: 14,
+      },
+    ],
+    reorderThreshold: 20,
+    wastageUnits: 2,
+    supplierId: "sup_001",
+    supplierName: "VetPharm Europe",
+    fifoCostCents: 190,
+    avcoCostCents: 205,
+    stocktakeVariance: -2,
+    movements: [
+      {
+        at: "2026-05-10T14:15:00.000Z",
+        type: "wastage",
+        units: -2,
+        warehouse: "Ward Nutrition Shelf",
+        reason: "Packaging damaged",
+      },
+    ],
+  },
+];
+
+export const seedPurchaseOrders = [
+  {
+    id: "po_001",
+    supplierId: "sup_001",
+    supplierName: "VetPharm Europe",
+    warehouse: "Prishtine Main Pharmacy",
+    approvalStatus: "approved",
+    receivingStatus: "received",
+    invoiceMatchStatus: "matched",
+    costMethod: "AVCO",
+    expectedAt: "2026-05-08T09:00:00.000Z",
+    receivedAt: "2026-05-09T08:55:00.000Z",
+    invoiceReference: "INV-VPE-2026-188",
+    lines: [
+      {
+        medicationName: "Apoquel 16 mg",
+        quantity: 20,
+        unitCostCents: 5100,
+      },
+      {
+        medicationName: "Feline GI Diet Pouch",
+        quantity: 30,
+        unitCostCents: 180,
+      },
+    ],
+  },
+  {
+    id: "po_002",
+    supplierId: "sup_002",
+    supplierName: "SecureVet Supply",
+    warehouse: "Controlled Cabinet",
+    approvalStatus: "pending",
+    receivingStatus: "ordered",
+    invoiceMatchStatus: "pending",
+    costMethod: "FIFO",
+    expectedAt: "2026-05-14T10:00:00.000Z",
+    receivedAt: null,
+    invoiceReference: "",
+    lines: [
+      {
+        medicationName: "Ketamine 100 mg/ml",
+        quantity: 4,
+        unitCostCents: 2850,
+      },
+    ],
+  },
+];
+
+export const seedControlledLog = [
+  {
+    id: "ctl_001",
+    inventoryItemId: "inv_002",
+    patientId: "pat_001",
+    actor: "Dr. Elira Hoxha",
+    at: "2026-05-03T08:15:00.000Z",
+    action: "dispense",
+    units: 1,
+    remainingUnits: 5,
+    authorityReportStatus: "not-required",
+    reconciliationStatus: "open",
+    note: "Pre-med for dental anesthesia planning.",
+  },
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
@@ -868,6 +1059,9 @@ export const clinicCoreSeed = {
   appointments: seedAppointments,
   clientMessages: seedClientMessages,
   staffRoster: seedStaffRoster,
+  inventoryItems: seedInventoryItems,
+  purchaseOrders: seedPurchaseOrders,
+  controlledLog: seedControlledLog,
 };
 
 function collection(state, key) {

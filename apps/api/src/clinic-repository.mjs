@@ -63,6 +63,15 @@ function normalizeState(state) {
     staffRoster: Array.isArray(state.staffRoster)
       ? state.staffRoster
       : clone(clinicCoreSeed.staffRoster || []),
+    inventoryItems: Array.isArray(state.inventoryItems)
+      ? state.inventoryItems
+      : clone(clinicCoreSeed.inventoryItems || []),
+    purchaseOrders: Array.isArray(state.purchaseOrders)
+      ? state.purchaseOrders
+      : clone(clinicCoreSeed.purchaseOrders || []),
+    controlledLog: Array.isArray(state.controlledLog)
+      ? state.controlledLog
+      : clone(clinicCoreSeed.controlledLog || []),
     auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents : [],
   };
 }
@@ -937,6 +946,169 @@ export async function updateClientMessage(id, input) {
   );
   await writeClinicState(state);
   return state.clientMessages[index];
+}
+
+export async function createInventoryItem(input) {
+  const state = await readClinicState();
+  const warehouseLocation = normalizeText(
+    input.warehouseLocation || input.warehouse,
+    "Main Pharmacy",
+  );
+  const lotNumber = normalizeText(input.lotNumber, `LOT-${Date.now()}`);
+  const onHandUnits = Number(input.onHandUnits || 0);
+  const item = {
+    id: makeId("inv"),
+    medicationName: normalizeText(input.medicationName, "Inventory item"),
+    atcvetCode: normalizeText(input.atcvetCode),
+    dosageForm: normalizeText(input.dosageForm, "tablet"),
+    names: {
+      sq: normalizeText(input.nameSq || input.medicationName, "Medication"),
+      en: normalizeText(input.nameEn || input.medicationName, "Medication"),
+      de: normalizeText(input.nameDe || input.medicationName, "Medication"),
+    },
+    concentration: normalizeText(input.concentration),
+    dosingInstructions: normalizeText(input.dosingInstructions),
+    countryAvailability: normalizeTags(
+      input.countryAvailability || input.country,
+    ),
+    restrictions: normalizeTags(input.restrictions),
+    prescriptionRequired: Boolean(input.prescriptionRequired),
+    controlledSubstance: Boolean(input.controlledSubstance),
+    warehouses: [
+      {
+        location: warehouseLocation,
+        lotNumber,
+        expiresAt: normalizeText(input.expiresAt) || null,
+        onHandUnits,
+      },
+    ],
+    reorderThreshold: Number(input.reorderThreshold || 0),
+    wastageUnits: Number(input.wastageUnits || 0),
+    supplierId: normalizeText(input.supplierId, "sup_manual"),
+    supplierName: normalizeText(input.supplierName, "Manual supplier"),
+    fifoCostCents: Math.round(Number(input.fifoCost || 0) * 100),
+    avcoCostCents: Math.round(
+      Number(input.avcoCost || input.fifoCost || 0) * 100,
+    ),
+    stocktakeVariance: Number(input.stocktakeVariance || 0),
+    movements: onHandUnits
+      ? [
+          {
+            at: nowIso(),
+            type: "receive",
+            units: onHandUnits,
+            warehouse: warehouseLocation,
+            reason: "Initial stock entry",
+          },
+        ]
+      : [],
+  };
+  state.inventoryItems.push(item);
+  appendAudit(
+    state,
+    "created",
+    "inventory",
+    item.id,
+    `Created inventory item ${item.medicationName}`,
+  );
+  await writeClinicState(state);
+  return item;
+}
+
+export async function updateInventoryItem(id, input) {
+  const state = await readClinicState();
+  const index = state.inventoryItems.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  const { controlledEntry, ...patch } = input;
+  state.inventoryItems[index] = {
+    ...state.inventoryItems[index],
+    ...patch,
+    id,
+  };
+  if (state.inventoryItems[index].controlledSubstance && controlledEntry) {
+    state.controlledLog.push({
+      id: makeId("ctl"),
+      inventoryItemId: id,
+      patientId: normalizeText(controlledEntry.patientId) || null,
+      actor: normalizeText(controlledEntry.actor, "Dr. Demo"),
+      at: nowIso(),
+      action: normalizeText(controlledEntry.action, "adjustment"),
+      units: Number(controlledEntry.units || 0),
+      remainingUnits: Number(controlledEntry.remainingUnits || 0),
+      authorityReportStatus: normalizeText(
+        controlledEntry.authorityReportStatus,
+        "not-required",
+      ),
+      reconciliationStatus: normalizeText(
+        controlledEntry.reconciliationStatus,
+        "open",
+      ),
+      note: normalizeText(controlledEntry.note),
+    });
+  }
+  appendAudit(
+    state,
+    "updated",
+    "inventory",
+    id,
+    `Updated inventory item ${state.inventoryItems[index].medicationName}`,
+  );
+  await writeClinicState(state);
+  return state.inventoryItems[index];
+}
+
+export async function createPurchaseOrder(input) {
+  const state = await readClinicState();
+  const purchaseOrder = {
+    id: makeId("po"),
+    supplierId: normalizeText(input.supplierId, "sup_manual"),
+    supplierName: normalizeText(input.supplierName, "Manual supplier"),
+    warehouse: normalizeText(input.warehouse, "Main Pharmacy"),
+    approvalStatus: normalizeText(input.approvalStatus, "pending"),
+    receivingStatus: normalizeText(input.receivingStatus, "ordered"),
+    invoiceMatchStatus: normalizeText(input.invoiceMatchStatus, "pending"),
+    costMethod: normalizeText(input.costMethod, "AVCO"),
+    expectedAt: normalizeText(input.expectedAt, nowIso()),
+    receivedAt: normalizeText(input.receivedAt) || null,
+    invoiceReference: normalizeText(input.invoiceReference),
+    lines: [
+      {
+        medicationName: normalizeText(input.medicationName, "Inventory item"),
+        quantity: Number(input.quantity || 0),
+        unitCostCents: Math.round(Number(input.unitCost || 0) * 100),
+      },
+    ],
+  };
+  state.purchaseOrders.push(purchaseOrder);
+  appendAudit(
+    state,
+    "created",
+    "purchase-order",
+    purchaseOrder.id,
+    `Created purchase order ${purchaseOrder.id}`,
+  );
+  await writeClinicState(state);
+  return purchaseOrder;
+}
+
+export async function updatePurchaseOrder(id, input) {
+  const state = await readClinicState();
+  const index = state.purchaseOrders.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.purchaseOrders[index] = {
+    ...state.purchaseOrders[index],
+    ...input,
+    id,
+  };
+  appendAudit(
+    state,
+    "updated",
+    "purchase-order",
+    id,
+    `Updated purchase order ${state.purchaseOrders[index].id}`,
+  );
+  await writeClinicState(state);
+  return state.purchaseOrders[index];
 }
 
 function nextYearDate(dateText) {

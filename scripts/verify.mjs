@@ -16,6 +16,10 @@ import {
   getHospitalizationSummary,
   hospitalizationFeatureCoverage,
 } from "../packages/shared/hospitalizations.mjs";
+import {
+  getInventorySummary,
+  inventoryFeatureCoverage,
+} from "../packages/shared/inventory.mjs";
 import { getLabSummary, labFeatureCoverage } from "../packages/shared/labs.mjs";
 import {
   getOperationsSummary,
@@ -120,6 +124,12 @@ for (const range of ["F133-F150", "F151-F161", "F162-F168"]) {
   }
 }
 
+for (const range of ["F169-F175", "F176-F182", "F183-F191"]) {
+  if (!inventoryFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P3 inventory coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
 const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
 const prescriptionSummary = getPrescriptionSummary(clinicCoreSeed);
@@ -129,6 +139,7 @@ const diagnosticSummary = getDiagnosticSummary(clinicCoreSeed);
 const labSummary = getLabSummary(clinicCoreSeed);
 const specialtySummary = getSpecialtySummary(clinicCoreSeed);
 const operationsSummary = getOperationsSummary(clinicCoreSeed);
+const inventorySummary = getInventorySummary(clinicCoreSeed);
 if (
   summary.counts.patients < 2 ||
   summary.counts.owners < 2 ||
@@ -140,7 +151,8 @@ if (
   diagnosticSummary.counts.diagnostics < 2 ||
   labSummary.counts.labs < 2 ||
   specialtySummary.counts.records < 2 ||
-  operationsSummary.counts.appointments < 3
+  operationsSummary.counts.appointments < 3 ||
+  inventorySummary.counts.items < 3
 ) {
   throw new Error("Clinic core seed data is incomplete");
 }
@@ -199,4 +211,7 @@ console.log(
 );
 console.log(
   `Verified P3 operations seed with ${operationsSummary.counts.appointments} appointments, ${operationsSummary.counts.queuedMessages} queued messages and ${operationsSummary.counts.staffOnShift} staff on shift.`,
+);
+console.log(
+  `Verified P3 inventory seed with ${inventorySummary.counts.items} items, ${inventorySummary.counts.openPurchaseOrders} open purchase orders and ${inventorySummary.counts.controlledOpen} controlled reconciliations.`,
 );

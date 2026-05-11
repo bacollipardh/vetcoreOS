@@ -14,6 +14,12 @@ import {
   getHospitalizationSummary,
   listHospitalizations,
 } from "../../../packages/shared/hospitalizations.mjs";
+import {
+  getInventorySummary,
+  listControlledLog,
+  listInventoryItems,
+  listPurchaseOrders,
+} from "../../../packages/shared/inventory.mjs";
 import { getLabSummary, listLabs } from "../../../packages/shared/labs.mjs";
 import {
   getOperationsSummary,
@@ -40,11 +46,13 @@ import {
 import {
   createDiagnostic,
   createHospitalization,
+  createInventoryItem,
   createLab,
   createAppointment,
   createClientMessage,
   createOwner,
   createPatient,
+  createPurchaseOrder,
   createPrescription,
   createSurgery,
   createSpecialty,
@@ -53,11 +61,13 @@ import {
   readClinicState,
   updateDiagnostic,
   updateHospitalization,
+  updateInventoryItem,
   updateLab,
   updateAppointment,
   updateClientMessage,
   updateOwner,
   updatePatient,
+  updatePurchaseOrder,
   updatePrescription,
   updateSurgery,
   updateSpecialty,
@@ -248,6 +258,46 @@ export function createVetCoreApiServer() {
 
       if (
         request.method === "GET" &&
+        url.pathname === "/clinic/inventory/summary"
+      ) {
+        await sendClinicPayload(response, (state) =>
+          getInventorySummary(state),
+        );
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/inventory-items"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listInventoryItems(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/purchase-orders"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listPurchaseOrders(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/controlled-log"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listControlledLog(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
         url.pathname === "/clinic/operations/summary"
       ) {
         await sendClinicPayload(response, (state) =>
@@ -373,6 +423,30 @@ export function createVetCoreApiServer() {
 
       if (request.method === "POST" && url.pathname === "/clinic/labs") {
         sendJson(response, 201, await createLab(await readBody(request)));
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/inventory-items"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createInventoryItem(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/purchase-orders"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createPurchaseOrder(await readBody(request)),
+        );
         return;
       }
 
@@ -515,6 +589,34 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      const inventoryItemId = matchId(url.pathname, "/clinic/inventory-items");
+      if (request.method === "PATCH" && inventoryItemId) {
+        const item = await updateInventoryItem(
+          inventoryItemId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          item ? 200 : 404,
+          item || { error: "Inventory item not found" },
+        );
+        return;
+      }
+
+      const purchaseOrderId = matchId(url.pathname, "/clinic/purchase-orders");
+      if (request.method === "PATCH" && purchaseOrderId) {
+        const purchaseOrder = await updatePurchaseOrder(
+          purchaseOrderId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          purchaseOrder ? 200 : 404,
+          purchaseOrder || { error: "Purchase order not found" },
+        );
+        return;
+      }
+
       const appointmentId = matchId(url.pathname, "/clinic/appointments");
       if (request.method === "PATCH" && appointmentId) {
         const appointment = await updateAppointment(
@@ -572,6 +674,10 @@ export function createVetCoreApiServer() {
           "/clinic/hospitalizations",
           "/clinic/diagnostics",
           "/clinic/labs",
+          "/clinic/inventory/summary",
+          "/clinic/inventory-items",
+          "/clinic/purchase-orders",
+          "/clinic/controlled-log",
           "/clinic/operations/summary",
           "/clinic/appointments",
           "/clinic/client-messages",

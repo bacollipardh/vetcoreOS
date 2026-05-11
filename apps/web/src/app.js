@@ -12,6 +12,7 @@ const viewTitles = {
   labs: "Laboratory",
   specialties: "Specialty Modules",
   operations: "Operations Hub",
+  inventory: "Pharmacy & Inventory",
   audit: "Audit Trail",
   roadmap: "Product Roadmap",
 };
@@ -41,6 +42,10 @@ let latestState = {
   appointments: [],
   clientMessages: [],
   staffRoster: [],
+  inventorySummary: null,
+  inventoryItems: [],
+  purchaseOrders: [],
+  controlledLog: [],
   auditEvents: [],
 };
 
@@ -107,6 +112,8 @@ const modalLabels = {
   specialty: "Create specialty record",
   appointment: "Schedule appointment",
   message: "Compose client message",
+  inventory: "Add inventory item",
+  purchaseOrder: "Create purchase order",
 };
 function openModalPanel(panel) {
   if (!panel) return;
@@ -194,6 +201,9 @@ const detailCollections = {
   specialty: "specialties",
   appointment: "appointments",
   message: "clientMessages",
+  inventory: "inventoryItems",
+  purchaseOrder: "purchaseOrders",
+  controlled: "controlledLog",
   audit: "auditEvents",
 };
 const detailTitles = {
@@ -208,6 +218,9 @@ const detailTitles = {
   specialty: "Specialty detail",
   appointment: "Appointment detail",
   message: "Client message detail",
+  inventory: "Inventory item detail",
+  purchaseOrder: "Purchase order detail",
+  controlled: "Controlled log detail",
   audit: "Audit event",
 };
 function ensureDetailModal() {
@@ -563,6 +576,78 @@ function recordDetail(type, record) {
       detailSection("Message summary", [["Summary", record.summary]]),
     ].join("");
   }
+  if (type === "inventory") {
+    return [
+      detailSection("Inventory item", [
+        ["Medication", record.medicationName],
+        ["ATCvet", record.atcvetCode],
+        ["Form", record.dosageForm],
+        ["Concentration", record.concentration],
+        ["Risk", record.riskStatus],
+        ["On hand", record.totalUnits],
+        ["Reorder threshold", record.reorderThreshold],
+        ["Supplier", record.supplierName],
+        ["Earliest expiry", record.earliestExpiry || "-"],
+      ]),
+      detailSection(
+        "Warehouses and movements",
+        [
+          ["Warehouses", record.warehouseCount],
+          ["Movements", record.movementCount],
+          ["Controlled", record.controlledSubstance ? "Yes" : "No"],
+          ["Prescription required", record.prescriptionRequired ? "Yes" : "No"],
+        ],
+        `${compactList(record.warehouses, "No warehouse lots.")}${compactList(record.movements, "No stock movements.")}`,
+      ),
+    ].join("");
+  }
+  if (type === "purchaseOrder") {
+    return [
+      detailSection(
+        "Purchase order",
+        [
+          ["Supplier", record.supplierName],
+          ["Warehouse", record.warehouse],
+          ["Approval", record.approvalStatus],
+          ["Receiving", record.receivingStatus],
+          ["Invoice match", record.invoiceMatchStatus],
+          ["Cost method", record.costMethod],
+          [
+            "Expected",
+            record.expectedAt
+              ? new Date(record.expectedAt).toLocaleString()
+              : "-",
+          ],
+          [
+            "Received",
+            record.receivedAt
+              ? new Date(record.receivedAt).toLocaleString()
+              : "-",
+          ],
+          ["Invoice ref", record.invoiceReference || "-"],
+        ],
+        compactList(record.lines, "No PO lines."),
+      ),
+    ].join("");
+  }
+  if (type === "controlled") {
+    return [
+      detailSection(
+        "Controlled log entry",
+        [
+          ["Medication", record.inventoryItem?.medicationName],
+          ["Patient", patientName],
+          ["Actor", record.actor],
+          ["Action", record.action],
+          ["Units", record.units],
+          ["Remaining", record.remainingUnits],
+          ["Authority", record.authorityReportStatus],
+          ["Reconciliation", record.reconciliationStatus],
+        ],
+        compactList([record.note], "No note."),
+      ),
+    ].join("");
+  }
   return detailSection(
     "Record",
     Object.entries(record).filter(
@@ -597,6 +682,12 @@ function appointmentInputs(record) {
 function messageInputs(record) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="message-update" data-id="${record.id}"><h3>Message input</h3><label>Status<select name="status"><option value="draft">draft</option><option value="queued">queued</option><option value="sent">sent</option><option value="replied">replied</option></select></label><label>Language<input name="language" value="${record.language || ""}" /></label><label>Summary<textarea name="summary">${record.summary || ""}</textarea></label><label class="checkbox-line"><input name="requiresReply" type="checkbox" value="true" ${record.requiresReply ? "checked" : ""} /> Requires reply</label><label class="checkbox-line"><input name="translated" type="checkbox" value="true" ${record.translated ? "checked" : ""} /> Translated</label><button type="submit">Save message</button></form></div>`;
 }
+function inventoryInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="inventory-update" data-id="${record.id}"><h3>Inventory input</h3><label>Reorder threshold<input name="reorderThreshold" type="number" value="${record.reorderThreshold || 0}" /></label><label>Supplier<input name="supplierName" value="${record.supplierName || ""}" /></label><label>Dosing instructions<textarea name="dosingInstructions">${record.dosingInstructions || ""}</textarea></label><button type="submit">Save inventory info</button></form><form class="form-card" data-detail-form="inventory-movement" data-id="${record.id}"><h3>Add movement</h3><label>Type<select name="movementType"><option value="receive">receive</option><option value="dispense">dispense</option><option value="wastage">wastage</option><option value="stocktake">stocktake</option></select></label><label>Units<input name="units" type="number" required /></label><label>Warehouse<input name="warehouse" placeholder="Main Pharmacy" /></label><label>Reason<input name="reason" required /></label><label>Patient ID<input name="patientId" placeholder="pat_001 for controlled logs" /></label><button type="submit">Add movement</button></form></div>`;
+}
+function purchaseOrderInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="purchase-order-update" data-id="${record.id}"><h3>PO input</h3><label>Approval<select name="approvalStatus"><option value="pending">pending</option><option value="approved">approved</option></select></label><label>Receiving<select name="receivingStatus"><option value="ordered">ordered</option><option value="receiving">receiving</option><option value="received">received</option></select></label><label>Invoice match<select name="invoiceMatchStatus"><option value="pending">pending</option><option value="matched">matched</option></select></label><label>Invoice reference<input name="invoiceReference" value="${record.invoiceReference || ""}" /></label><button type="submit">Save purchase order</button></form></div>`;
+}
 function visitInputs(visit) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="visit-soap" data-id="${visit.id}"><h3>Clinical input</h3><label>Anamnesis<textarea name="anamnesis">${visit.anamnesis || ""}</textarea></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" value="${visit.physicalExam?.temperatureC || ""}" /></label><label>Pulse bpm<input name="pulseBpm" type="number" value="${visit.physicalExam?.pulseBpm || ""}" /></label><label>Respiration rpm<input name="respirationRpm" type="number" value="${visit.physicalExam?.respirationRpm || ""}" /></label><label>Diagnosis<input name="diagnosis" value="${visit.diagnoses?.[0]?.label || ""}" /></label><label>Treatment plan<input name="treatmentPlan" value="${(visit.treatmentPlan || []).join(", ")}" /></label><button type="submit">Save visit info</button></form><form class="form-card" data-detail-form="visit-procedure" data-id="${visit.id}"><h3>Add procedure</h3><label>Procedure<input name="procedureName" required /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" /></label><button type="submit">Add procedure</button></form></div>`;
 }
@@ -620,6 +711,8 @@ function openRecordDetail(type, id) {
     specialty: specialtyInputs,
     appointment: appointmentInputs,
     message: messageInputs,
+    inventory: inventoryInputs,
+    purchaseOrder: purchaseOrderInputs,
     visit: visitInputs,
     surgery: surgeryInputs,
   };
@@ -659,6 +752,14 @@ function openRecordDetail(type, id) {
   }
   if (type === "message") {
     panel.querySelector('[name="status"]').value = record.status || "draft";
+  }
+  if (type === "purchaseOrder") {
+    panel.querySelector('[name="approvalStatus"]').value =
+      record.approvalStatus || "pending";
+    panel.querySelector('[name="receivingStatus"]').value =
+      record.receivingStatus || "ordered";
+    panel.querySelector('[name="invoiceMatchStatus"]').value =
+      record.invoiceMatchStatus || "pending";
   }
   openModalPanel(panel);
 }
@@ -839,6 +940,35 @@ function staffRow(record) {
   const statusClass = record.capacityState === "balanced" ? "ok" : "alert";
   return `<article class="record-row"><header><div><h3>${record.name}</h3><p class="record-meta">${record.role} · ${record.specialty} · Shift ${record.shift}</p></div><div class="visit-actions"><span class="${statusClass}">${record.capacityState}</span></div></header><p class="record-meta">Room ${record.room} · Workload ${record.workloadScore}% · Active appointments ${record.activeAppointments}</p><div class="badges"><span class="badge">${record.pendingTasks} pending tasks</span><span class="badge">${record.timeOffRequested ? "time-off request" : "available"}</span></div></article>`;
 }
+function inventoryRow(record) {
+  const statusClass = record.riskStatus === "healthy" ? "ok" : "alert";
+  const dispenseAction =
+    record.totalUnits > 0
+      ? `<button class="text-button" type="button" data-dispense-inventory-id="${record.id}">Dispense</button>`
+      : "";
+  const receiveAction = `<button class="text-button" type="button" data-receive-inventory-id="${record.id}">Receive</button>`;
+  return `<article class="record-row"><header><div><h3>${record.medicationName}</h3><p class="record-meta">${record.atcvetCode || "No ATCvet"} · ${record.dosageForm} · ${record.concentration || "No concentration"}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${dispenseAction}${receiveAction}<button class="text-button" type="button" data-detail-type="inventory" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">On hand ${record.totalUnits} · Reorder ${record.reorderThreshold} · Warehouses ${record.warehouseCount} · Earliest expiry ${record.earliestExpiry || "-"}</p><div class="badges"><span class="badge">${record.prescriptionRequired ? "RX required" : "OTC"}</span><span class="badge">${record.controlledSubstance ? "controlled" : "standard"}</span><span class="badge">${money(record.totalValueCents)}</span></div></article>`;
+}
+function purchaseOrderRow(record) {
+  const statusClass = record.riskStatus === "closed" ? "ok" : "alert";
+  const approveAction =
+    record.approvalStatus === "approved"
+      ? ""
+      : `<button class="text-button" type="button" data-approve-po-id="${record.id}">Approve</button>`;
+  const receiveAction =
+    record.receivingStatus === "received"
+      ? ""
+      : `<button class="text-button" type="button" data-receive-po-id="${record.id}">Receive</button>`;
+  const matchAction =
+    record.invoiceMatchStatus === "matched"
+      ? ""
+      : `<button class="text-button" type="button" data-match-po-id="${record.id}">Match invoice</button>`;
+  return `<article class="record-row"><header><div><h3>${record.supplierName}</h3><p class="record-meta">${record.warehouse} · ${record.costMethod} · expected ${record.expectedAt ? new Date(record.expectedAt).toLocaleDateString() : "-"}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${approveAction}${receiveAction}${matchAction}<button class="text-button" type="button" data-detail-type="purchaseOrder" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Lines ${record.lineCount} · Total ${money(record.totalCostCents)} · Invoice ${record.invoiceReference || "pending"}</p><div class="badges"><span class="badge">${record.approvalStatus}</span><span class="badge">${record.receivingStatus}</span><span class="badge">${record.invoiceMatchStatus}</span></div></article>`;
+}
+function controlledRow(record) {
+  const statusClass = record.riskStatus === "logged" ? "ok" : "alert";
+  return `<article class="record-row"><header><div><h3>${record.inventoryItem?.medicationName || "Controlled item"}</h3><p class="record-meta">${record.patient?.name || "No patient"} · ${record.actor} · ${new Date(record.at).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span><button class="text-button" type="button" data-detail-type="controlled" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">${record.action} ${record.units} unit(s) · Remaining ${record.remainingUnits}</p><div class="badges"><span class="badge">${record.authorityReportStatus}</span><span class="badge">${record.reconciliationStatus}</span></div></article>`;
+}
 function auditRow(event) {
   return `<article class="record-row"><header><div><h3>${event.summary}</h3><p class="record-meta">${new Date(event.at).toLocaleString()} · ${event.actor}</p></div><div class="visit-actions"><span class="badge">${event.action}</span><span class="badge">${event.entityType}</span></div></header><p class="record-meta">Record: ${event.entityId}</p></article>`;
 }
@@ -920,6 +1050,13 @@ function patientTimeline(patient, visits) {
         `<article class="timeline-item"><span>${new Date(record.scheduledAt).toLocaleDateString()}</span><strong>${record.channel} message</strong><p>${record.status} · ${record.template}</p><small>F151-F161 client communication</small></article>`,
     )
     .join("");
+  const controlledItems = latestState.controlledLog
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.at).toLocaleDateString()}</span><strong>Controlled drug: ${record.inventoryItem?.medicationName || "Medication"}</strong><p>${record.action} ${record.units} unit(s) · remaining ${record.remainingUnits}</p><small>F188-F191 controlled substances</small></article>`,
+    )
+    .join("");
   const weightItems =
     patient.weightHistory
       ?.map(
@@ -937,8 +1074,9 @@ function patientTimeline(patient, visits) {
     specialtyItems ||
     appointmentItems ||
     messageItems ||
+    controlledItems ||
     weightItems
-    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${weightItems}`
+    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${controlledItems}${weightItems}`
     : '<p class="muted">No clinical timeline yet.</p>';
 }
 function patientInputs(patient) {
@@ -1030,6 +1168,7 @@ function bindTopbar() {
       renderLabs();
       renderSpecialties();
       renderOperations();
+      renderInventory();
       renderAudit();
     });
   document.addEventListener("click", (event) => {
@@ -1145,7 +1284,7 @@ function splitTags(value) {
 function bindWorkflowActions() {
   document.addEventListener("click", async (event) => {
     const button = event.target.closest(
-      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id]",
+      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id], [data-dispense-inventory-id], [data-receive-inventory-id], [data-approve-po-id], [data-receive-po-id], [data-match-po-id]",
     );
     if (!button) return;
     try {
@@ -1433,6 +1572,136 @@ function bindWorkflowActions() {
         selectedPatientId = record?.patientId || selectedPatientId;
         setStatus("Reply logged.");
       }
+      if (button.dataset.dispenseInventoryId) {
+        const record = latestState.inventoryItems.find(
+          (entry) => entry.id === button.dataset.dispenseInventoryId,
+        );
+        const warehouses = (record?.warehouses || []).map((warehouse, index) =>
+          index === 0
+            ? {
+                ...warehouse,
+                onHandUnits: Math.max(
+                  0,
+                  Number(warehouse.onHandUnits || 0) - 1,
+                ),
+              }
+            : warehouse,
+        );
+        const totalUnits = warehouses.reduce(
+          (sum, warehouse) => sum + Number(warehouse.onHandUnits || 0),
+          0,
+        );
+        const movements = [
+          ...(record?.movements || []),
+          {
+            at: new Date().toISOString(),
+            type: "dispense",
+            units: -1,
+            warehouse: warehouses[0]?.location || "Main Pharmacy",
+            reason: "Manual dispense from UI",
+          },
+        ];
+        await fetchJson(
+          `/clinic/inventory-items/${button.dataset.dispenseInventoryId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              warehouses,
+              movements,
+              controlledEntry: record?.controlledSubstance
+                ? {
+                    patientId: selectedPatientId,
+                    action: "dispense",
+                    units: 1,
+                    remainingUnits: totalUnits,
+                    note: "UI dispense action",
+                  }
+                : null,
+            }),
+          },
+        );
+        setStatus("Inventory dispensed.");
+      }
+      if (button.dataset.receiveInventoryId) {
+        const record = latestState.inventoryItems.find(
+          (entry) => entry.id === button.dataset.receiveInventoryId,
+        );
+        const warehouses = (record?.warehouses || []).map((warehouse, index) =>
+          index === 0
+            ? {
+                ...warehouse,
+                onHandUnits: Number(warehouse.onHandUnits || 0) + 5,
+              }
+            : warehouse,
+        );
+        const totalUnits = warehouses.reduce(
+          (sum, warehouse) => sum + Number(warehouse.onHandUnits || 0),
+          0,
+        );
+        const movements = [
+          ...(record?.movements || []),
+          {
+            at: new Date().toISOString(),
+            type: "receive",
+            units: 5,
+            warehouse: warehouses[0]?.location || "Main Pharmacy",
+            reason: "Manual receiving from UI",
+          },
+        ];
+        await fetchJson(
+          `/clinic/inventory-items/${button.dataset.receiveInventoryId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              warehouses,
+              movements,
+              controlledEntry: record?.controlledSubstance
+                ? {
+                    patientId: null,
+                    action: "receive",
+                    units: 5,
+                    remainingUnits: totalUnits,
+                    note: "UI receive action",
+                  }
+                : null,
+            }),
+          },
+        );
+        setStatus("Inventory received.");
+      }
+      if (button.dataset.approvePoId) {
+        await fetchJson(
+          `/clinic/purchase-orders/${button.dataset.approvePoId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ approvalStatus: "approved" }),
+          },
+        );
+        setStatus("Purchase order approved.");
+      }
+      if (button.dataset.receivePoId) {
+        await fetchJson(
+          `/clinic/purchase-orders/${button.dataset.receivePoId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              receivingStatus: "received",
+              receivedAt: new Date().toISOString(),
+            }),
+          },
+        );
+        setStatus("Purchase order received.");
+      }
+      if (button.dataset.matchPoId) {
+        await fetchJson(`/clinic/purchase-orders/${button.dataset.matchPoId}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            invoiceMatchStatus: "matched",
+            invoiceReference: `INV-${Date.now().toString(36).toUpperCase()}`,
+          }),
+        });
+        setStatus("Invoice matched.");
+      }
       await render();
     } catch (error) {
       setStatus(error.message, "error");
@@ -1474,6 +1743,10 @@ async function submitForm(form) {
     data.requiresReply = data.requiresReply === "true";
     data.translated = data.translated === "true";
   }
+  if (type === "inventory") {
+    data.prescriptionRequired = data.prescriptionRequired === "true";
+    data.controlledSubstance = data.controlledSubstance === "true";
+  }
   const endpoints = {
     owner: "/clinic/owners",
     patient: "/clinic/patients",
@@ -1487,6 +1760,8 @@ async function submitForm(form) {
     specialty: "/clinic/specialties",
     appointment: "/clinic/appointments",
     message: "/clinic/client-messages",
+    inventory: "/clinic/inventory-items",
+    purchaseOrder: "/clinic/purchase-orders",
   };
   const created = await fetchJson(endpoints[type], {
     method: "POST",
@@ -1519,6 +1794,7 @@ async function submitForm(form) {
   if (type === "lab") switchView("labs");
   if (type === "specialty") switchView("specialties");
   if (type === "appointment" || type === "message") switchView("operations");
+  if (type === "inventory" || type === "purchaseOrder") switchView("inventory");
 }
 function bindForms() {
   document.querySelectorAll("form[data-form]").forEach((form) =>
@@ -1944,6 +2220,91 @@ function bindDetailForms() {
         });
         setStatus("Client message saved.");
       }
+      if (form.dataset.detailForm === "inventory-update") {
+        await fetchJson(`/clinic/inventory-items/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            reorderThreshold: Number(data.reorderThreshold || 0),
+            supplierName: data.supplierName,
+            dosingInstructions: data.dosingInstructions,
+          }),
+        });
+        setStatus("Inventory info saved.");
+      }
+      if (form.dataset.detailForm === "inventory-movement") {
+        const record = latestState.inventoryItems.find(
+          (entry) => entry.id === id,
+        );
+        const delta = Number(data.units || 0);
+        const signedUnits =
+          data.movementType === "receive" ? Math.abs(delta) : -Math.abs(delta);
+        const warehouses = (record?.warehouses || []).map((warehouse, index) =>
+          index === 0
+            ? {
+                ...warehouse,
+                location: data.warehouse || warehouse.location,
+                onHandUnits:
+                  data.movementType === "receive"
+                    ? Number(warehouse.onHandUnits || 0) + Math.abs(delta)
+                    : Math.max(
+                        0,
+                        Number(warehouse.onHandUnits || 0) - Math.abs(delta),
+                      ),
+              }
+            : warehouse,
+        );
+        const totalUnits = warehouses.reduce(
+          (sum, warehouse) => sum + Number(warehouse.onHandUnits || 0),
+          0,
+        );
+        const movements = [
+          ...(record?.movements || []),
+          {
+            at: new Date().toISOString(),
+            type: data.movementType,
+            units: signedUnits,
+            warehouse:
+              data.warehouse ||
+              record?.warehouses?.[0]?.location ||
+              "Main Pharmacy",
+            reason: data.reason,
+          },
+        ];
+        await fetchJson(`/clinic/inventory-items/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            warehouses,
+            movements,
+            controlledEntry: record?.controlledSubstance
+              ? {
+                  patientId: data.patientId || null,
+                  action: data.movementType,
+                  units: Math.abs(delta),
+                  remainingUnits: totalUnits,
+                  note: data.reason,
+                }
+              : null,
+          }),
+        });
+        form.reset();
+        setStatus("Inventory movement added.");
+      }
+      if (form.dataset.detailForm === "purchase-order-update") {
+        await fetchJson(`/clinic/purchase-orders/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            approvalStatus: data.approvalStatus,
+            receivingStatus: data.receivingStatus,
+            invoiceMatchStatus: data.invoiceMatchStatus,
+            invoiceReference: data.invoiceReference,
+            receivedAt:
+              data.receivingStatus === "received"
+                ? new Date().toISOString()
+                : null,
+          }),
+        });
+        setStatus("Purchase order saved.");
+      }
       await render();
       const detailMap = {
         "owner-profile": "owner",
@@ -1963,6 +2324,9 @@ function bindDetailForms() {
         "appointment-update": "appointment",
         "appointment-staff": "appointment",
         "message-update": "message",
+        "inventory-update": "inventory",
+        "inventory-movement": "inventory",
+        "purchase-order-update": "purchaseOrder",
         "visit-soap": "visit",
         "visit-procedure": "visit",
         "surgery-update": "surgery",
@@ -2194,6 +2558,43 @@ function renderOperations() {
   document.querySelector("#staff-list").innerHTML =
     `${recordCount(staff)}${staff.map(staffRow).join("") || '<p class="muted">No staff records match the current search.</p>'}`;
 }
+function renderInventory() {
+  const summary = latestState.inventorySummary;
+  if (!summary) return;
+  const items = filtered(latestState.inventoryItems);
+  const purchaseOrders = filtered(latestState.purchaseOrders);
+  const controlledLog = filtered(latestState.controlledLog);
+  const alerts = filtered(summary.alerts);
+  document.querySelector("#inventory-metrics").innerHTML = [
+    metric("Items", summary.counts.items),
+    metric("Low stock", summary.counts.lowStock),
+    metric("Controlled", summary.counts.controlled),
+    metric("Open POs", summary.counts.openPurchaseOrders),
+  ].join("");
+  document.querySelector("#inventory-coverage").innerHTML =
+    summary.featureCoverage
+      .map(
+        (coverage) =>
+          `<article class="card"><div class="badges"><span class="badge">${coverage.range}</span></div><h3>${coverage.area}</h3><p>${coverage.description}</p></article>`,
+      )
+      .join("");
+  document.querySelector("#inventory-alerts").innerHTML =
+    alerts
+      .map((record) =>
+        record.medicationName
+          ? inventoryRow(record)
+          : record.supplierName
+            ? purchaseOrderRow(record)
+            : controlledRow(record),
+      )
+      .join("") || '<p class="muted">No inventory alerts.</p>';
+  document.querySelector("#inventory-list").innerHTML =
+    `${recordCount(items)}${items.map(inventoryRow).join("") || '<p class="muted">No inventory items match the current search.</p>'}`;
+  document.querySelector("#purchase-order-list").innerHTML =
+    `${recordCount(purchaseOrders)}${purchaseOrders.map(purchaseOrderRow).join("") || '<p class="muted">No purchase orders match the current search.</p>'}`;
+  document.querySelector("#controlled-log-list").innerHTML =
+    `${recordCount(controlledLog)}${controlledLog.map(controlledRow).join("") || '<p class="muted">No controlled-log entries match the current search.</p>'}`;
+}
 function renderAudit() {
   const events = filtered(latestState.auditEvents);
   document.querySelector("#audit-list").innerHTML =
@@ -2285,6 +2686,15 @@ function renderWorkQueue() {
         latestState.operationsSummary.alerts.length,
       ),
     );
+  if (latestState.inventorySummary?.alerts.length)
+    items.push(
+      queueItem(
+        "inventory",
+        "Inventory attention needed",
+        "Receive stock, clear reorder risk and reconcile controlled substances.",
+        latestState.inventorySummary.alerts.length,
+      ),
+    );
   const count = items.length;
   document.querySelector("#queue-count").textContent = `${count} open`;
   document.querySelector("#work-queue").innerHTML =
@@ -2310,6 +2720,10 @@ async function render() {
     diagnostics,
     labSummary,
     labs,
+    inventorySummary,
+    inventoryItems,
+    purchaseOrders,
+    controlledLog,
     operationsSummary,
     appointments,
     clientMessages,
@@ -2335,6 +2749,10 @@ async function render() {
     fetchJson("/clinic/diagnostics"),
     fetchJson("/clinic/labs/summary"),
     fetchJson("/clinic/labs"),
+    fetchJson("/clinic/inventory/summary"),
+    fetchJson("/clinic/inventory-items"),
+    fetchJson("/clinic/purchase-orders"),
+    fetchJson("/clinic/controlled-log"),
     fetchJson("/clinic/operations/summary"),
     fetchJson("/clinic/appointments"),
     fetchJson("/clinic/client-messages"),
@@ -2361,6 +2779,10 @@ async function render() {
     diagnostics: diagnostics.items,
     labSummary,
     labs: labs.items,
+    inventorySummary,
+    inventoryItems: inventoryItems.items,
+    purchaseOrders: purchaseOrders.items,
+    controlledLog: controlledLog.items,
     operationsSummary,
     appointments: appointments.items,
     clientMessages: clientMessages.items,
@@ -2428,6 +2850,11 @@ async function render() {
     latestState.patients,
     "name",
   );
+  fillSelect(
+    document.querySelector("#inventory-patient-options"),
+    latestState.patients,
+    "name",
+  );
   fillVisitSelect(document.querySelector("#visit-options"), latestState.visits);
   fillVisitSelect(
     document.querySelector("#prescription-visit-options"),
@@ -2473,6 +2900,7 @@ async function render() {
     metric("Care alerts", hospitalizationSummary.alerts.length),
     metric("Diagnostic alerts", diagnosticSummary.alerts.length),
     metric("Lab alerts", labSummary.alerts.length),
+    metric("Inventory alerts", inventorySummary.alerts.length),
     metric("Operations alerts", operationsSummary.alerts.length),
     metric("Specialty alerts", specialtySummary.alerts.length),
     metric("Audit events", auditEvents.items.length),
@@ -2492,6 +2920,7 @@ async function render() {
   renderHospitalizations();
   renderDiagnostics();
   renderLabs();
+  renderInventory();
   renderOperations();
   renderSpecialties();
   renderAudit();

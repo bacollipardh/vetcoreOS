@@ -290,6 +290,54 @@ if (
 )
   throw new Error("Operations summary failed");
 
+const inventoryItem = await request("/clinic/inventory-items", {
+  method: "POST",
+  body: JSON.stringify({
+    medicationName: "Smoke inventory item",
+    atcvetCode: "SMOKE-INV",
+    dosageForm: "tablet",
+    concentration: "50 mg",
+    countryAvailability: "XK,DE",
+    restrictions: "prescription-required",
+    prescriptionRequired: true,
+    controlledSubstance: true,
+    warehouseLocation: "Smoke Pharmacy",
+    lotNumber: "SMOKE-LOT-1",
+    expiresAt: "2026-12-31",
+    onHandUnits: 8,
+    reorderThreshold: 5,
+    supplierName: "Smoke Supplier",
+    fifoCost: 14.5,
+    avcoCost: 14.0,
+  }),
+});
+if (!inventoryItem.id || !inventoryItem.controlledSubstance)
+  throw new Error("Inventory item create failed");
+
+const purchaseOrder = await request("/clinic/purchase-orders", {
+  method: "POST",
+  body: JSON.stringify({
+    supplierName: "Smoke Supplier",
+    warehouse: "Smoke Pharmacy",
+    medicationName: "Smoke inventory item",
+    quantity: 12,
+    unitCost: 13.2,
+    approvalStatus: "pending",
+    receivingStatus: "ordered",
+    invoiceMatchStatus: "pending",
+    costMethod: "FIFO",
+  }),
+});
+if (!purchaseOrder.id || purchaseOrder.lines.length < 1)
+  throw new Error("Purchase order create failed");
+
+const inventorySummary = await request("/clinic/inventory/summary");
+if (
+  inventorySummary.counts.items < 1 ||
+  inventorySummary.featureCoverage.length !== 3
+)
+  throw new Error("Inventory summary failed");
+
 const currentVaccination = await request(
   `/clinic/vaccinations/${vaccination.id}`,
   {
@@ -503,6 +551,61 @@ const sentMessage = await request(
 if (sentMessage.status !== "sent" || !sentMessage.translated)
   throw new Error("Client message workflow action failed");
 
+const updatedInventory = await request(
+  `/clinic/inventory-items/${inventoryItem.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      reorderThreshold: 9,
+      warehouses: inventoryItem.warehouses.map((warehouse) => ({
+        ...warehouse,
+        onHandUnits: warehouse.onHandUnits - 2,
+      })),
+      movements: [
+        ...inventoryItem.movements,
+        {
+          at: new Date().toISOString(),
+          type: "dispense",
+          units: -2,
+          warehouse: inventoryItem.warehouses[0].location,
+          reason: "Smoke controlled dispense",
+        },
+      ],
+      controlledEntry: {
+        patientId: patient.id,
+        action: "dispense",
+        units: 2,
+        remainingUnits: inventoryItem.warehouses[0].onHandUnits - 2,
+        note: "Smoke controlled dispense",
+      },
+    }),
+  },
+);
+if (
+  updatedInventory.reorderThreshold !== 9 ||
+  updatedInventory.warehouses[0].onHandUnits !== 6
+)
+  throw new Error("Inventory workflow action failed");
+
+const updatedPurchaseOrder = await request(
+  `/clinic/purchase-orders/${purchaseOrder.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      approvalStatus: "approved",
+      receivingStatus: "received",
+      invoiceMatchStatus: "matched",
+      invoiceReference: "SMOKE-INV-1",
+      receivedAt: new Date().toISOString(),
+    }),
+  },
+);
+if (
+  updatedPurchaseOrder.approvalStatus !== "approved" ||
+  updatedPurchaseOrder.invoiceMatchStatus !== "matched"
+)
+  throw new Error("Purchase order workflow action failed");
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: "PATCH",
   body: JSON.stringify({
@@ -530,6 +633,13 @@ if (
   ) ||
   !audit.items.some(
     (event) => event.entityType === "message" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) => event.entityType === "inventory" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "purchase-order" && event.action === "updated",
   )
 ) {
   throw new Error("Audit trail did not capture create/update workflow events");
