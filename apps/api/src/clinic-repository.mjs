@@ -54,6 +54,15 @@ function normalizeState(state) {
     specialties: Array.isArray(state.specialties)
       ? state.specialties
       : clone(clinicCoreSeed.specialties || []),
+    appointments: Array.isArray(state.appointments)
+      ? state.appointments
+      : clone(clinicCoreSeed.appointments || []),
+    clientMessages: Array.isArray(state.clientMessages)
+      ? state.clientMessages
+      : clone(clinicCoreSeed.clientMessages || []),
+    staffRoster: Array.isArray(state.staffRoster)
+      ? state.staffRoster
+      : clone(clinicCoreSeed.staffRoster || []),
     auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents : [],
   };
 }
@@ -807,6 +816,127 @@ export async function updateSpecialty(id, input) {
   );
   await writeClinicState(state);
   return state.specialties[index];
+}
+
+export async function createAppointment(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const ownerId =
+    normalizeText(input.ownerId) ||
+    patient.ownerIds.find((id) =>
+      state.owners.some((owner) => owner.id === id),
+    );
+  if (!ownerId) throw new Error("valid ownerId is required");
+  const appointment = {
+    id: makeId("apt"),
+    patientId: patient.id,
+    ownerId,
+    visitId: normalizeText(input.visitId) || null,
+    title: normalizeText(input.title, "Appointment"),
+    appointmentType: normalizeText(input.appointmentType, "consult"),
+    channel: normalizeText(input.channel, "front-desk"),
+    room: normalizeText(input.room, "Exam Room 1"),
+    assignedVet: normalizeText(input.assignedVet, "Dr. Demo"),
+    assignedStaff: normalizeTags(
+      input.assignedStaff || input.assignedStaffName,
+    ),
+    startsAt: normalizeText(input.startsAt, nowIso()),
+    endsAt: normalizeText(input.endsAt, nowIso()),
+    status: normalizeText(input.status, "scheduled"),
+    colorCode: normalizeText(input.colorCode, "consult"),
+    recurring: Boolean(input.recurring),
+    waitlistPriority: normalizeText(input.waitlistPriority) || null,
+    walkIn: Boolean(input.walkIn),
+    surgeryBlock: Boolean(input.surgeryBlock),
+    bufferMinutes: Number(input.bufferMinutes || 0),
+    noShowRisk: normalizeText(input.noShowRisk, "low"),
+    notes: normalizeText(input.notes),
+  };
+  state.appointments.push(appointment);
+  appendAudit(
+    state,
+    "created",
+    "appointment",
+    appointment.id,
+    `Created appointment ${appointment.title}`,
+  );
+  await writeClinicState(state);
+  return appointment;
+}
+
+export async function updateAppointment(id, input) {
+  const state = await readClinicState();
+  const index = state.appointments.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.appointments[index] = { ...state.appointments[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "appointment",
+    id,
+    `Updated appointment ${state.appointments[index].title}`,
+  );
+  await writeClinicState(state);
+  return state.appointments[index];
+}
+
+export async function createClientMessage(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const ownerId =
+    normalizeText(input.ownerId) ||
+    patient.ownerIds.find((id) =>
+      state.owners.some((owner) => owner.id === id),
+    );
+  if (!ownerId) throw new Error("valid ownerId is required");
+  const message = {
+    id: makeId("msg"),
+    patientId: patient.id,
+    ownerId,
+    appointmentId: normalizeText(input.appointmentId) || null,
+    channel: normalizeText(input.channel, "WhatsApp"),
+    direction: normalizeText(input.direction, "outbound"),
+    template: normalizeText(input.template, "custom"),
+    language: normalizeText(input.language, "sq"),
+    status: normalizeText(input.status, "draft"),
+    scheduledAt: normalizeText(input.scheduledAt, nowIso()),
+    sentAt: normalizeText(input.sentAt) || null,
+    requiresReply: Boolean(input.requiresReply),
+    translated: Boolean(input.translated),
+    summary: normalizeText(input.summary, "Client message"),
+  };
+  state.clientMessages.push(message);
+  appendAudit(
+    state,
+    "created",
+    "message",
+    message.id,
+    `Created client message ${message.template}`,
+  );
+  await writeClinicState(state);
+  return message;
+}
+
+export async function updateClientMessage(id, input) {
+  const state = await readClinicState();
+  const index = state.clientMessages.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.clientMessages[index] = {
+    ...state.clientMessages[index],
+    ...input,
+    id,
+  };
+  appendAudit(
+    state,
+    "updated",
+    "message",
+    id,
+    `Updated client message ${state.clientMessages[index].template}`,
+  );
+  await writeClinicState(state);
+  return state.clientMessages[index];
 }
 
 function nextYearDate(dateText) {

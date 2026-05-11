@@ -247,6 +247,49 @@ if (
 )
   throw new Error("Specialty summary failed");
 
+const appointment = await request("/clinic/appointments", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    visitId: visit.id,
+    title: "Smoke follow-up booking",
+    appointmentType: "recheck",
+    channel: "phone",
+    room: "Exam Room 1",
+    assignedVet: "Dr. Smoke",
+    assignedStaff: "Tech Smoke",
+    startsAt: "2026-05-15T09:00:00.000Z",
+    endsAt: "2026-05-15T09:20:00.000Z",
+    status: "scheduled",
+    noShowRisk: "medium",
+  }),
+});
+if (!appointment.id || appointment.patientId !== patient.id)
+  throw new Error("Appointment create failed");
+
+const clientMessage = await request("/clinic/client-messages", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    appointmentId: appointment.id,
+    channel: "SMS",
+    template: "visit-reminder",
+    language: "sq",
+    status: "queued",
+    requiresReply: true,
+    summary: "Smoke reminder message",
+  }),
+});
+if (!clientMessage.id || clientMessage.patientId !== patient.id)
+  throw new Error("Client message create failed");
+
+const operationsSummary = await request("/clinic/operations/summary");
+if (
+  operationsSummary.counts.appointments < 1 ||
+  operationsSummary.featureCoverage.length !== 3
+)
+  throw new Error("Operations summary failed");
+
 const currentVaccination = await request(
   `/clinic/vaccinations/${vaccination.id}`,
   {
@@ -430,6 +473,36 @@ if (
 )
   throw new Error("Specialty workflow action failed");
 
+const confirmedAppointment = await request(
+  `/clinic/appointments/${appointment.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: "confirmed",
+      assignedStaff: [...appointment.assignedStaff, "Reception Smoke"],
+    }),
+  },
+);
+if (
+  confirmedAppointment.status !== "confirmed" ||
+  confirmedAppointment.assignedStaff.length < 2
+)
+  throw new Error("Appointment workflow action failed");
+
+const sentMessage = await request(
+  `/clinic/client-messages/${clientMessage.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: "sent",
+      sentAt: new Date().toISOString(),
+      translated: true,
+    }),
+  },
+);
+if (sentMessage.status !== "sent" || !sentMessage.translated)
+  throw new Error("Client message workflow action failed");
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: "PATCH",
   body: JSON.stringify({
@@ -451,6 +524,12 @@ if (
   ) ||
   !audit.items.some(
     (event) => event.entityType === "specialty" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) => event.entityType === "appointment" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) => event.entityType === "message" && event.action === "updated",
   )
 ) {
   throw new Error("Audit trail did not capture create/update workflow events");

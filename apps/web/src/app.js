@@ -11,6 +11,7 @@ const viewTitles = {
   diagnostics: "Diagnostics & Imaging",
   labs: "Laboratory",
   specialties: "Specialty Modules",
+  operations: "Operations Hub",
   audit: "Audit Trail",
   roadmap: "Product Roadmap",
 };
@@ -36,6 +37,10 @@ let latestState = {
   labs: [],
   specialtySummary: null,
   specialties: [],
+  operationsSummary: null,
+  appointments: [],
+  clientMessages: [],
+  staffRoster: [],
   auditEvents: [],
 };
 
@@ -100,6 +105,8 @@ const modalLabels = {
   diagnostic: "Record diagnostic",
   lab: "Create lab order",
   specialty: "Create specialty record",
+  appointment: "Schedule appointment",
+  message: "Compose client message",
 };
 function openModalPanel(panel) {
   if (!panel) return;
@@ -185,6 +192,8 @@ const detailCollections = {
   diagnostic: "diagnostics",
   lab: "labs",
   specialty: "specialties",
+  appointment: "appointments",
+  message: "clientMessages",
   audit: "auditEvents",
 };
 const detailTitles = {
@@ -197,6 +206,8 @@ const detailTitles = {
   diagnostic: "Diagnostic detail",
   lab: "Lab detail",
   specialty: "Specialty detail",
+  appointment: "Appointment detail",
+  message: "Client message detail",
   audit: "Audit event",
 };
 function ensureDetailModal() {
@@ -494,6 +505,64 @@ function recordDetail(type, record) {
       ),
     ].join("");
   }
+  if (type === "appointment") {
+    return [
+      detailSection("Appointment", [
+        ["Patient", patientName],
+        ["Owner", record.owner?.displayName],
+        ["Title", record.title],
+        ["Type", record.appointmentType],
+        ["Status", record.status],
+        ["Risk", record.riskStatus],
+        ["Vet", record.assignedVet],
+        ["Room", record.room],
+        [
+          "Starts",
+          record.startsAt ? new Date(record.startsAt).toLocaleString() : "-",
+        ],
+        [
+          "Ends",
+          record.endsAt ? new Date(record.endsAt).toLocaleString() : "-",
+        ],
+      ]),
+      detailSection(
+        "Operational flags",
+        [
+          ["Channel", record.channel],
+          ["Walk-in", record.walkIn ? "Yes" : "No"],
+          ["Waitlist priority", record.waitlistPriority || "-"],
+          ["Buffer", `${record.bufferMinutes || 0} min`],
+          ["No-show risk", record.noShowRisk],
+        ],
+        compactList(record.assignedStaff, "No staff assigned."),
+      ),
+    ].join("");
+  }
+  if (type === "message") {
+    return [
+      detailSection("Client message", [
+        ["Patient", patientName],
+        ["Owner", record.owner?.displayName],
+        ["Channel", record.channel],
+        ["Template", record.template],
+        ["Language", record.language],
+        ["Status", record.status],
+        ["Requires reply", record.requiresReply ? "Yes" : "No"],
+        ["Translated", record.translated ? "Yes" : "No"],
+        [
+          "Scheduled",
+          record.scheduledAt
+            ? new Date(record.scheduledAt).toLocaleString()
+            : "-",
+        ],
+        [
+          "Sent",
+          record.sentAt ? new Date(record.sentAt).toLocaleString() : "-",
+        ],
+      ]),
+      detailSection("Message summary", [["Summary", record.summary]]),
+    ].join("");
+  }
   return detailSection(
     "Record",
     Object.entries(record).filter(
@@ -522,6 +591,12 @@ function labInputs(record) {
 function specialtyInputs(record) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="specialty-update" data-id="${record.id}"><h3>Specialty input</h3><label>Status<select name="status"><option value="active">active</option><option value="draft">draft</option><option value="completed">completed</option></select></label><label>Quality of life score<input name="qualityOfLifeScore" type="number" min="0" max="70" value="${record.qualityOfLifeScore || ""}" /></label><label>Plan<input name="plan" value="${(record.plan || []).join(", ")}" /></label><button type="submit">Save specialty info</button></form><form class="form-card" data-detail-form="specialty-task" data-id="${record.id}"><h3>Add task</h3><label>Task<input name="task" required /></label><label>Due<input name="dueAt" type="date" /></label><button type="submit">Add task</button></form><form class="form-card" data-detail-form="specialty-finding" data-id="${record.id}"><h3>Add finding</h3><label>Region<input name="region" /></label><label>Finding<input name="finding" required /></label><label>Stage<input name="stage" /></label><button type="submit">Add finding</button></form></div>`;
 }
+function appointmentInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="appointment-update" data-id="${record.id}"><h3>Appointment input</h3><label>Status<select name="status"><option value="scheduled">scheduled</option><option value="confirmed">confirmed</option><option value="checked-in">checked-in</option><option value="completed">completed</option><option value="waitlist">waitlist</option><option value="no-show">no-show</option></select></label><label>Room<input name="room" value="${record.room || ""}" /></label><label>Assigned vet<input name="assignedVet" value="${record.assignedVet || ""}" /></label><label>Notes<textarea name="notes">${record.notes || ""}</textarea></label><button type="submit">Save appointment</button></form><form class="form-card" data-detail-form="appointment-staff" data-id="${record.id}"><h3>Add staff</h3><label>Staff member<input name="staff" required /></label><button type="submit">Add staff</button></form></div>`;
+}
+function messageInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="message-update" data-id="${record.id}"><h3>Message input</h3><label>Status<select name="status"><option value="draft">draft</option><option value="queued">queued</option><option value="sent">sent</option><option value="replied">replied</option></select></label><label>Language<input name="language" value="${record.language || ""}" /></label><label>Summary<textarea name="summary">${record.summary || ""}</textarea></label><label class="checkbox-line"><input name="requiresReply" type="checkbox" value="true" ${record.requiresReply ? "checked" : ""} /> Requires reply</label><label class="checkbox-line"><input name="translated" type="checkbox" value="true" ${record.translated ? "checked" : ""} /> Translated</label><button type="submit">Save message</button></form></div>`;
+}
 function visitInputs(visit) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="visit-soap" data-id="${visit.id}"><h3>Clinical input</h3><label>Anamnesis<textarea name="anamnesis">${visit.anamnesis || ""}</textarea></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" value="${visit.physicalExam?.temperatureC || ""}" /></label><label>Pulse bpm<input name="pulseBpm" type="number" value="${visit.physicalExam?.pulseBpm || ""}" /></label><label>Respiration rpm<input name="respirationRpm" type="number" value="${visit.physicalExam?.respirationRpm || ""}" /></label><label>Diagnosis<input name="diagnosis" value="${visit.diagnoses?.[0]?.label || ""}" /></label><label>Treatment plan<input name="treatmentPlan" value="${(visit.treatmentPlan || []).join(", ")}" /></label><button type="submit">Save visit info</button></form><form class="form-card" data-detail-form="visit-procedure" data-id="${visit.id}"><h3>Add procedure</h3><label>Procedure<input name="procedureName" required /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" /></label><button type="submit">Add procedure</button></form></div>`;
 }
@@ -543,6 +618,8 @@ function openRecordDetail(type, id) {
     diagnostic: diagnosticInputs,
     lab: labInputs,
     specialty: specialtyInputs,
+    appointment: appointmentInputs,
+    message: messageInputs,
     visit: visitInputs,
     surgery: surgeryInputs,
   };
@@ -576,6 +653,12 @@ function openRecordDetail(type, id) {
   }
   if (type === "specialty") {
     panel.querySelector('[name="status"]').value = record.status || "active";
+  }
+  if (type === "appointment") {
+    panel.querySelector('[name="status"]').value = record.status || "scheduled";
+  }
+  if (type === "message") {
+    panel.querySelector('[name="status"]').value = record.status || "draft";
   }
   openModalPanel(panel);
 }
@@ -718,6 +801,44 @@ function specialtyRow(record) {
     : "";
   return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.title}</h3><p class="record-meta">${record.specialtyType} · ${record.clinician} · ${new Date(record.startedAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${closeTasksAction}${completeAction}<button class="text-button" type="button" data-detail-type="specialty" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Status ${record.status} · Open tasks ${record.openTaskCount} · Attachments ${record.attachmentCount}</p><p class="record-meta">Plan: ${record.plan?.join(", ") || "No plan yet"}</p><div class="badges"><span class="badge">${record.specialtyType}</span><span class="badge">${record.taskCount} tasks</span><span class="badge">${record.qualityOfLifeScore ?? "no QoL"} QoL</span></div></article>`;
 }
+function appointmentRow(record) {
+  const statusClass =
+    ["scheduled", "confirmed", "completed"].includes(record.status) &&
+    !["waitlist", "no-show", "walk-in", "high-risk"].includes(record.riskStatus)
+      ? "ok"
+      : "alert";
+  const confirmAction =
+    record.status === "confirmed" || record.status === "completed"
+      ? ""
+      : `<button class="text-button" type="button" data-confirm-appointment-id="${record.id}">Confirm</button>`;
+  const checkInAction =
+    record.status === "checked-in" || record.status === "completed"
+      ? ""
+      : `<button class="text-button" type="button" data-checkin-appointment-id="${record.id}">Check in</button>`;
+  const noShowAction =
+    record.status === "no-show" || record.status === "completed"
+      ? ""
+      : `<button class="text-button" type="button" data-no-show-appointment-id="${record.id}">No-show</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.title}</h3><p class="record-meta">${record.appointmentType} · ${record.assignedVet} · ${new Date(record.startsAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${confirmAction}${checkInAction}${noShowAction}<button class="text-button" type="button" data-detail-type="appointment" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Room ${record.room} · ${record.channel} · Buffer ${record.bufferMinutes || 0} min · No-show risk ${record.noShowRisk}</p><p class="record-meta">Owner: ${record.owner?.displayName || "-"} · Notes: ${record.notes || "No operational notes"}</p><div class="badges"><span class="badge">${record.status}</span><span class="badge">${record.walkIn ? "walk-in" : "planned"}</span><span class="badge">${record.waitlistPriority || "no waitlist"}</span></div></article>`;
+}
+function messageRow(record) {
+  const statusClass = ["sent", "replied"].includes(record.status)
+    ? "ok"
+    : "alert";
+  const sendAction =
+    record.status === "sent" || record.status === "replied"
+      ? ""
+      : `<button class="text-button" type="button" data-send-message-id="${record.id}">Send</button>`;
+  const replyAction =
+    !record.requiresReply || record.status === "replied"
+      ? ""
+      : `<button class="text-button" type="button" data-mark-message-replied-id="${record.id}">Mark replied</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.template}</h3><p class="record-meta">${record.channel} · ${record.language} · ${new Date(record.scheduledAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${sendAction}${replyAction}<button class="text-button" type="button" data-detail-type="message" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">${record.summary}</p><div class="badges"><span class="badge">${record.status}</span><span class="badge">${record.requiresReply ? "reply needed" : "one-way"}</span><span class="badge">${record.translated ? "translated" : "native"}</span></div></article>`;
+}
+function staffRow(record) {
+  const statusClass = record.capacityState === "balanced" ? "ok" : "alert";
+  return `<article class="record-row"><header><div><h3>${record.name}</h3><p class="record-meta">${record.role} · ${record.specialty} · Shift ${record.shift}</p></div><div class="visit-actions"><span class="${statusClass}">${record.capacityState}</span></div></header><p class="record-meta">Room ${record.room} · Workload ${record.workloadScore}% · Active appointments ${record.activeAppointments}</p><div class="badges"><span class="badge">${record.pendingTasks} pending tasks</span><span class="badge">${record.timeOffRequested ? "time-off request" : "available"}</span></div></article>`;
+}
 function auditRow(event) {
   return `<article class="record-row"><header><div><h3>${event.summary}</h3><p class="record-meta">${new Date(event.at).toLocaleString()} · ${event.actor}</p></div><div class="visit-actions"><span class="badge">${event.action}</span><span class="badge">${event.entityType}</span></div></header><p class="record-meta">Record: ${event.entityId}</p></article>`;
 }
@@ -785,6 +906,20 @@ function patientTimeline(patient, visits) {
         `<article class="timeline-item"><span>${new Date(record.startedAt).toLocaleDateString()}</span><strong>${record.specialtyType}: ${record.title}</strong><p>${record.riskStatus} · ${record.openTaskCount} open tasks</p><small>F109-F132 specialty workflow</small></article>`,
     )
     .join("");
+  const appointmentItems = latestState.appointments
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.startsAt).toLocaleDateString()}</span><strong>${record.title}</strong><p>${record.status} · ${record.room} · ${record.assignedVet}</p><small>F133-F150 scheduling workflow</small></article>`,
+    )
+    .join("");
+  const messageItems = latestState.clientMessages
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.scheduledAt).toLocaleDateString()}</span><strong>${record.channel} message</strong><p>${record.status} · ${record.template}</p><small>F151-F161 client communication</small></article>`,
+    )
+    .join("");
   const weightItems =
     patient.weightHistory
       ?.map(
@@ -800,8 +935,10 @@ function patientTimeline(patient, visits) {
     diagnosticItems ||
     labItems ||
     specialtyItems ||
+    appointmentItems ||
+    messageItems ||
     weightItems
-    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${weightItems}`
+    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${weightItems}`
     : '<p class="muted">No clinical timeline yet.</p>';
 }
 function patientInputs(patient) {
@@ -847,6 +984,17 @@ function fillVisitSelect(select, visits) {
     )
     .join("");
 }
+function fillAppointmentSelect(select, appointments) {
+  if (!select) return;
+  select.innerHTML = ['<option value="">No linked appointment</option>']
+    .concat(
+      appointments.map(
+        (record) =>
+          `<option value="${record.id}">${record.patient?.name || "Patient"} · ${record.title} · ${record.status}</option>`,
+      ),
+    )
+    .join("");
+}
 function switchView(view) {
   document
     .querySelectorAll(".nav-item")
@@ -881,6 +1029,7 @@ function bindTopbar() {
       renderDiagnostics();
       renderLabs();
       renderSpecialties();
+      renderOperations();
       renderAudit();
     });
   document.addEventListener("click", (event) => {
@@ -996,7 +1145,7 @@ function splitTags(value) {
 function bindWorkflowActions() {
   document.addEventListener("click", async (event) => {
     const button = event.target.closest(
-      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id]",
+      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id]",
     );
     if (!button) return;
     try {
@@ -1211,6 +1360,79 @@ function bindWorkflowActions() {
         selectedPatientId = record?.patientId || selectedPatientId;
         setStatus("Specialty tasks closed.");
       }
+      if (button.dataset.confirmAppointmentId) {
+        const record = latestState.appointments.find(
+          (entry) => entry.id === button.dataset.confirmAppointmentId,
+        );
+        await fetchJson(
+          `/clinic/appointments/${button.dataset.confirmAppointmentId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "confirmed" }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Appointment confirmed.");
+      }
+      if (button.dataset.checkinAppointmentId) {
+        const record = latestState.appointments.find(
+          (entry) => entry.id === button.dataset.checkinAppointmentId,
+        );
+        await fetchJson(
+          `/clinic/appointments/${button.dataset.checkinAppointmentId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "checked-in" }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Patient checked in.");
+      }
+      if (button.dataset.noShowAppointmentId) {
+        const record = latestState.appointments.find(
+          (entry) => entry.id === button.dataset.noShowAppointmentId,
+        );
+        await fetchJson(
+          `/clinic/appointments/${button.dataset.noShowAppointmentId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "no-show", noShowRisk: "high" }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Appointment marked as no-show.");
+      }
+      if (button.dataset.sendMessageId) {
+        const record = latestState.clientMessages.find(
+          (entry) => entry.id === button.dataset.sendMessageId,
+        );
+        await fetchJson(
+          `/clinic/client-messages/${button.dataset.sendMessageId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              status: "sent",
+              sentAt: new Date().toISOString(),
+            }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Client message sent.");
+      }
+      if (button.dataset.markMessageRepliedId) {
+        const record = latestState.clientMessages.find(
+          (entry) => entry.id === button.dataset.markMessageRepliedId,
+        );
+        await fetchJson(
+          `/clinic/client-messages/${button.dataset.markMessageRepliedId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "replied" }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Reply logged.");
+      }
       await render();
     } catch (error) {
       setStatus(error.message, "error");
@@ -1243,6 +1465,15 @@ async function submitForm(form) {
   if (type === "prescription")
     data.controlledSubstance = data.controlledSubstance === "true";
   if (type === "lab") data.sharedWithOwner = data.sharedWithOwner === "true";
+  if (type === "appointment") {
+    data.recurring = data.recurring === "true";
+    data.walkIn = data.walkIn === "true";
+    data.surgeryBlock = data.surgeryBlock === "true";
+  }
+  if (type === "message") {
+    data.requiresReply = data.requiresReply === "true";
+    data.translated = data.translated === "true";
+  }
   const endpoints = {
     owner: "/clinic/owners",
     patient: "/clinic/patients",
@@ -1254,6 +1485,8 @@ async function submitForm(form) {
     diagnostic: "/clinic/diagnostics",
     lab: "/clinic/labs",
     specialty: "/clinic/specialties",
+    appointment: "/clinic/appointments",
+    message: "/clinic/client-messages",
   };
   const created = await fetchJson(endpoints[type], {
     method: "POST",
@@ -1268,7 +1501,9 @@ async function submitForm(form) {
     type === "hospitalization" ||
     type === "diagnostic" ||
     type === "lab" ||
-    type === "specialty"
+    type === "specialty" ||
+    type === "appointment" ||
+    type === "message"
   )
     selectedPatientId = created.patientId;
   form.reset();
@@ -1283,6 +1518,7 @@ async function submitForm(form) {
   if (type === "diagnostic") switchView("diagnostics");
   if (type === "lab") switchView("labs");
   if (type === "specialty") switchView("specialties");
+  if (type === "appointment" || type === "message") switchView("operations");
 }
 function bindForms() {
   document.querySelectorAll("form[data-form]").forEach((form) =>
@@ -1670,6 +1906,44 @@ function bindDetailForms() {
         form.reset();
         setStatus("Specialty finding added.");
       }
+      if (form.dataset.detailForm === "appointment-update") {
+        await fetchJson(`/clinic/appointments/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            room: data.room,
+            assignedVet: data.assignedVet,
+            notes: data.notes,
+          }),
+        });
+        setStatus("Appointment saved.");
+      }
+      if (form.dataset.detailForm === "appointment-staff") {
+        const record = latestState.appointments.find(
+          (entry) => entry.id === id,
+        );
+        const assignedStaff = [...(record?.assignedStaff || []), data.staff];
+        await fetchJson(`/clinic/appointments/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ assignedStaff }),
+        });
+        form.reset();
+        setStatus("Staff added to appointment.");
+      }
+      if (form.dataset.detailForm === "message-update") {
+        await fetchJson(`/clinic/client-messages/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            language: data.language,
+            summary: data.summary,
+            requiresReply: data.requiresReply === "true",
+            translated: data.translated === "true",
+            sentAt: data.status === "sent" ? new Date().toISOString() : null,
+          }),
+        });
+        setStatus("Client message saved.");
+      }
       await render();
       const detailMap = {
         "owner-profile": "owner",
@@ -1686,6 +1960,9 @@ function bindDetailForms() {
         "specialty-update": "specialty",
         "specialty-task": "specialty",
         "specialty-finding": "specialty",
+        "appointment-update": "appointment",
+        "appointment-staff": "appointment",
+        "message-update": "message",
         "visit-soap": "visit",
         "visit-procedure": "visit",
         "surgery-update": "surgery",
@@ -1884,6 +2161,39 @@ function renderSpecialties() {
   document.querySelector("#specialty-list").innerHTML =
     `${recordCount(records)}${records.map(specialtyRow).join("") || '<p class="muted">No specialty records match the current search.</p>'}`;
 }
+function renderOperations() {
+  const summary = latestState.operationsSummary;
+  if (!summary) return;
+  const appointments = filtered(latestState.appointments);
+  const messages = filtered(latestState.clientMessages);
+  const staff = filtered(latestState.staffRoster);
+  const alerts = filtered(summary.alerts);
+  document.querySelector("#operations-metrics").innerHTML = [
+    metric("Appointments", summary.counts.appointments),
+    metric("Today", summary.counts.todayAppointments),
+    metric("Waitlist", summary.counts.waitlist),
+    metric("Queued messages", summary.counts.queuedMessages),
+  ].join("");
+  document.querySelector("#operations-coverage").innerHTML =
+    summary.featureCoverage
+      .map(
+        (coverage) =>
+          `<article class="card"><div class="badges"><span class="badge">${coverage.range}</span></div><h3>${coverage.area}</h3><p>${coverage.description}</p></article>`,
+      )
+      .join("");
+  document.querySelector("#operations-alerts").innerHTML =
+    alerts
+      .map((record) =>
+        record.assignedVet ? appointmentRow(record) : messageRow(record),
+      )
+      .join("") || '<p class="muted">No operational alerts.</p>';
+  document.querySelector("#appointment-list").innerHTML =
+    `${recordCount(appointments)}${appointments.map(appointmentRow).join("") || '<p class="muted">No appointments match the current search.</p>'}`;
+  document.querySelector("#message-list").innerHTML =
+    `${recordCount(messages)}${messages.map(messageRow).join("") || '<p class="muted">No client messages match the current search.</p>'}`;
+  document.querySelector("#staff-list").innerHTML =
+    `${recordCount(staff)}${staff.map(staffRow).join("") || '<p class="muted">No staff records match the current search.</p>'}`;
+}
 function renderAudit() {
   const events = filtered(latestState.auditEvents);
   document.querySelector("#audit-list").innerHTML =
@@ -1966,6 +2276,15 @@ function renderWorkQueue() {
         latestState.specialtySummary.alerts.length,
       ),
     );
+  if (latestState.operationsSummary?.alerts.length)
+    items.push(
+      queueItem(
+        "operations",
+        "Operational follow-up",
+        "Confirm bookings, work the waitlist and send client communications.",
+        latestState.operationsSummary.alerts.length,
+      ),
+    );
   const count = items.length;
   document.querySelector("#queue-count").textContent = `${count} open`;
   document.querySelector("#work-queue").innerHTML =
@@ -1991,6 +2310,10 @@ async function render() {
     diagnostics,
     labSummary,
     labs,
+    operationsSummary,
+    appointments,
+    clientMessages,
+    staffRoster,
     specialtySummary,
     specialties,
     auditEvents,
@@ -2012,6 +2335,10 @@ async function render() {
     fetchJson("/clinic/diagnostics"),
     fetchJson("/clinic/labs/summary"),
     fetchJson("/clinic/labs"),
+    fetchJson("/clinic/operations/summary"),
+    fetchJson("/clinic/appointments"),
+    fetchJson("/clinic/client-messages"),
+    fetchJson("/clinic/staff"),
     fetchJson("/clinic/specialties/summary"),
     fetchJson("/clinic/specialties"),
     fetchJson("/clinic/audit"),
@@ -2034,6 +2361,10 @@ async function render() {
     diagnostics: diagnostics.items,
     labSummary,
     labs: labs.items,
+    operationsSummary,
+    appointments: appointments.items,
+    clientMessages: clientMessages.items,
+    staffRoster: staffRoster.items,
     specialtySummary,
     specialties: specialties.items,
     auditEvents: auditEvents.items,
@@ -2087,6 +2418,16 @@ async function render() {
     latestState.patients,
     "name",
   );
+  fillSelect(
+    document.querySelector("#appointment-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#message-patient-options"),
+    latestState.patients,
+    "name",
+  );
   fillVisitSelect(document.querySelector("#visit-options"), latestState.visits);
   fillVisitSelect(
     document.querySelector("#prescription-visit-options"),
@@ -2112,6 +2453,14 @@ async function render() {
     document.querySelector("#specialty-visit-options"),
     latestState.visits,
   );
+  fillVisitSelect(
+    document.querySelector("#appointment-visit-options"),
+    latestState.visits,
+  );
+  fillAppointmentSelect(
+    document.querySelector("#message-appointment-options"),
+    latestState.appointments,
+  );
   document.querySelector("#metrics").innerHTML = [
     metric("Patients", summary.counts.patients),
     metric("Owners", summary.counts.owners),
@@ -2124,6 +2473,7 @@ async function render() {
     metric("Care alerts", hospitalizationSummary.alerts.length),
     metric("Diagnostic alerts", diagnosticSummary.alerts.length),
     metric("Lab alerts", labSummary.alerts.length),
+    metric("Operations alerts", operationsSummary.alerts.length),
     metric("Specialty alerts", specialtySummary.alerts.length),
     metric("Audit events", auditEvents.items.length),
   ].join("");
@@ -2142,6 +2492,7 @@ async function render() {
   renderHospitalizations();
   renderDiagnostics();
   renderLabs();
+  renderOperations();
   renderSpecialties();
   renderAudit();
   document.querySelector("#phases").innerHTML = blueprint.phases

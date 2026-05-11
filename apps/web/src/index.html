@@ -36,13 +36,14 @@
           <button class="nav-item" data-view="diagnostics">Diagnostics</button>
           <button class="nav-item" data-view="labs">Laboratory</button>
           <button class="nav-item" data-view="specialties">Specialties</button>
+          <button class="nav-item" data-view="operations">Operations</button>
           <span class="nav-group">Controls</span>
           <button class="nav-item" data-view="audit">Audit</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
         <div class="sidebar-note">
-          <span>P2</span>
-          <p>Coverage: F001-F132</p>
+          <span>P3</span>
+          <p>Coverage: F001-F168</p>
         </div>
       </aside>
       <main class="workspace">
@@ -1065,6 +1066,214 @@
                 /></label>
                 <button type="submit">Create specialty record</button>
               </form>
+            </section>
+          </div>
+        </section>
+        <section class="view" data-panel="operations">
+          <div class="metrics compact-metrics" id="operations-metrics"></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F133-F168</p>
+                  <h2>Scheduling, communication and staff</h2>
+                </div>
+              </div>
+              <div class="grid three" id="operations-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Operational alerts</h2>
+                <div id="operations-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Appointments board</h2>
+                <div id="appointment-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Client communication</h2>
+                <div id="message-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Staff workload</h2>
+                <div id="staff-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Schedule appointment</h2></div>
+              <form class="form-card" data-form="appointment">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="appointment-patient-options"
+                    required
+                  ></select
+                ></label>
+                <label
+                  >Visit<select
+                    name="visitId"
+                    id="appointment-visit-options"
+                  ></select
+                ></label>
+                <label
+                  >Title<input
+                    name="title"
+                    placeholder="Wellness exam / surgery block"
+                    required
+                /></label>
+                <label
+                  >Type<select name="appointmentType">
+                    <option value="consult">Consult</option>
+                    <option value="recheck">Recheck</option>
+                    <option value="document">Document</option>
+                    <option value="walk-in">Walk-in</option>
+                    <option value="surgery-block">Surgery block</option>
+                  </select></label
+                >
+                <label
+                  >Channel<select name="channel">
+                    <option value="front-desk">Front desk</option>
+                    <option value="phone">Phone</option>
+                    <option value="online-booking">Online booking</option>
+                    <option value="internal">Internal</option>
+                  </select></label
+                >
+                <label
+                  >Room<input name="room" placeholder="Exam Room 1"
+                /></label>
+                <label
+                  >Assigned vet<input name="assignedVet" placeholder="Dr. Demo"
+                /></label>
+                <label
+                  >Assigned staff<input
+                    name="assignedStaff"
+                    placeholder="Tech A, Reception B"
+                /></label>
+                <label
+                  >Starts at<input name="startsAt" type="datetime-local"
+                /></label>
+                <label
+                  >Ends at<input name="endsAt" type="datetime-local"
+                /></label>
+                <label
+                  >Status<select name="status">
+                    <option value="scheduled">Scheduled</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="waitlist">Waitlist</option>
+                    <option value="checked-in">Checked in</option>
+                  </select></label
+                >
+                <label
+                  >Color code<input
+                    name="colorCode"
+                    placeholder="consult / surgery / urgent"
+                /></label>
+                <label
+                  >Buffer minutes<input
+                    name="bufferMinutes"
+                    type="number"
+                    min="0"
+                    value="0"
+                /></label>
+                <label
+                  >Waitlist priority<select name="waitlistPriority">
+                    <option value="">None</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select></label
+                >
+                <label
+                  >No-show risk<select name="noShowRisk">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select></label
+                >
+                <label class="checkbox-line"
+                  ><input name="recurring" type="checkbox" value="true" />
+                  Recurring</label
+                >
+                <label class="checkbox-line"
+                  ><input name="walkIn" type="checkbox" value="true" />
+                  Walk-in</label
+                >
+                <label class="checkbox-line"
+                  ><input name="surgeryBlock" type="checkbox" value="true" />
+                  Surgery block</label
+                >
+                <label
+                  >Notes<textarea
+                    name="notes"
+                    placeholder="Operational notes"
+                  ></textarea>
+                </label>
+                <button type="submit">Create appointment</button>
+              </form>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Compose client message</h2></div>
+                <form class="form-card" data-form="message">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="message-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Appointment<select
+                      name="appointmentId"
+                      id="message-appointment-options"
+                    ></select
+                  ></label>
+                  <label
+                    >Channel<select name="channel">
+                      <option value="WhatsApp">WhatsApp</option>
+                      <option value="SMS">SMS</option>
+                      <option value="Email">Email</option>
+                    </select></label
+                  >
+                  <label
+                    >Template<select name="template">
+                      <option value="visit-reminder">Visit reminder</option>
+                      <option value="booking-follow-up">
+                        Booking follow-up
+                      </option>
+                      <option value="follow-up">Clinical follow-up</option>
+                      <option value="custom">Custom</option>
+                    </select></label
+                  >
+                  <label
+                    >Language<input name="language" placeholder="sq / en / de"
+                  /></label>
+                  <label
+                    >Status<select name="status">
+                      <option value="draft">Draft</option>
+                      <option value="queued">Queued</option>
+                      <option value="sent">Sent</option>
+                    </select></label
+                  >
+                  <label
+                    >Scheduled at<input
+                      name="scheduledAt"
+                      type="datetime-local"
+                  /></label>
+                  <label class="checkbox-line"
+                    ><input name="requiresReply" type="checkbox" value="true" />
+                    Requires reply</label
+                  >
+                  <label class="checkbox-line"
+                    ><input name="translated" type="checkbox" value="true" />
+                    Translated</label
+                  >
+                  <label
+                    >Summary<textarea
+                      name="summary"
+                      placeholder="Reminder or follow-up summary"
+                      required
+                    ></textarea>
+                  </label>
+                  <button type="submit">Create message</button>
+                </form>
+              </div>
             </section>
           </div>
         </section>

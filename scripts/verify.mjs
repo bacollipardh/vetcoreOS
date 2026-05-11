@@ -18,6 +18,10 @@ import {
 } from "../packages/shared/hospitalizations.mjs";
 import { getLabSummary, labFeatureCoverage } from "../packages/shared/labs.mjs";
 import {
+  getOperationsSummary,
+  operationsFeatureCoverage,
+} from "../packages/shared/operations.mjs";
+import {
   getPrescriptionSummary,
   prescriptionFeatureCoverage,
 } from "../packages/shared/prescriptions.mjs";
@@ -110,6 +114,12 @@ for (const range of ["F109-F116", "F117-F128", "F129-F132"]) {
   }
 }
 
+for (const range of ["F133-F150", "F151-F161", "F162-F168"]) {
+  if (!operationsFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P3 operations coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
 const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
 const prescriptionSummary = getPrescriptionSummary(clinicCoreSeed);
@@ -118,6 +128,7 @@ const hospitalizationSummary = getHospitalizationSummary(clinicCoreSeed);
 const diagnosticSummary = getDiagnosticSummary(clinicCoreSeed);
 const labSummary = getLabSummary(clinicCoreSeed);
 const specialtySummary = getSpecialtySummary(clinicCoreSeed);
+const operationsSummary = getOperationsSummary(clinicCoreSeed);
 if (
   summary.counts.patients < 2 ||
   summary.counts.owners < 2 ||
@@ -128,7 +139,8 @@ if (
   hospitalizationSummary.counts.stays < 2 ||
   diagnosticSummary.counts.diagnostics < 2 ||
   labSummary.counts.labs < 2 ||
-  specialtySummary.counts.records < 2
+  specialtySummary.counts.records < 2 ||
+  operationsSummary.counts.appointments < 3
 ) {
   throw new Error("Clinic core seed data is incomplete");
 }
@@ -184,4 +196,7 @@ console.log(
 );
 console.log(
   `Verified P2 specialty seed with ${specialtySummary.counts.records} records and ${specialtySummary.alerts.length} alerts.`,
+);
+console.log(
+  `Verified P3 operations seed with ${operationsSummary.counts.appointments} appointments, ${operationsSummary.counts.queuedMessages} queued messages and ${operationsSummary.counts.staffOnShift} staff on shift.`,
 );

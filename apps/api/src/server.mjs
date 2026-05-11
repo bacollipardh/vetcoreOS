@@ -16,6 +16,12 @@ import {
 } from "../../../packages/shared/hospitalizations.mjs";
 import { getLabSummary, listLabs } from "../../../packages/shared/labs.mjs";
 import {
+  getOperationsSummary,
+  listAppointments,
+  listClientMessages,
+  listStaffRoster,
+} from "../../../packages/shared/operations.mjs";
+import {
   getPrescriptionSummary,
   listPrescriptions,
 } from "../../../packages/shared/prescriptions.mjs";
@@ -35,6 +41,8 @@ import {
   createDiagnostic,
   createHospitalization,
   createLab,
+  createAppointment,
+  createClientMessage,
   createOwner,
   createPatient,
   createPrescription,
@@ -46,6 +54,8 @@ import {
   updateDiagnostic,
   updateHospitalization,
   updateLab,
+  updateAppointment,
+  updateClientMessage,
   updateOwner,
   updatePatient,
   updatePrescription,
@@ -238,6 +248,40 @@ export function createVetCoreApiServer() {
 
       if (
         request.method === "GET" &&
+        url.pathname === "/clinic/operations/summary"
+      ) {
+        await sendClinicPayload(response, (state) =>
+          getOperationsSummary(state),
+        );
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/clinic/appointments") {
+        await sendClinicPayload(response, (state) => ({
+          items: listAppointments(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/client-messages"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listClientMessages(state),
+        }));
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/clinic/staff") {
+        await sendClinicPayload(response, (state) => ({
+          items: listStaffRoster(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
         url.pathname === "/clinic/specialties/summary"
       ) {
         await sendClinicPayload(response, (state) =>
@@ -329,6 +373,30 @@ export function createVetCoreApiServer() {
 
       if (request.method === "POST" && url.pathname === "/clinic/labs") {
         sendJson(response, 201, await createLab(await readBody(request)));
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/appointments"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createAppointment(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/client-messages"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createClientMessage(await readBody(request)),
+        );
         return;
       }
 
@@ -447,6 +515,34 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      const appointmentId = matchId(url.pathname, "/clinic/appointments");
+      if (request.method === "PATCH" && appointmentId) {
+        const appointment = await updateAppointment(
+          appointmentId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          appointment ? 200 : 404,
+          appointment || { error: "Appointment not found" },
+        );
+        return;
+      }
+
+      const messageId = matchId(url.pathname, "/clinic/client-messages");
+      if (request.method === "PATCH" && messageId) {
+        const message = await updateClientMessage(
+          messageId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          message ? 200 : 404,
+          message || { error: "Client message not found" },
+        );
+        return;
+      }
+
       const specialtyId = matchId(url.pathname, "/clinic/specialties");
       if (request.method === "PATCH" && specialtyId) {
         const specialty = await updateSpecialty(
@@ -476,6 +572,10 @@ export function createVetCoreApiServer() {
           "/clinic/hospitalizations",
           "/clinic/diagnostics",
           "/clinic/labs",
+          "/clinic/operations/summary",
+          "/clinic/appointments",
+          "/clinic/client-messages",
+          "/clinic/staff",
           "/clinic/specialties",
           "/clinic/audit",
         ],
