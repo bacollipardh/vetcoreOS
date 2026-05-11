@@ -38,13 +38,14 @@
           <button class="nav-item" data-view="specialties">Specialties</button>
           <button class="nav-item" data-view="operations">Operations</button>
           <button class="nav-item" data-view="inventory">Inventory</button>
+          <button class="nav-item" data-view="finance">Finance</button>
           <span class="nav-group">Controls</span>
           <button class="nav-item" data-view="audit">Audit</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
         <div class="sidebar-note">
           <span>P3</span>
-          <p>Coverage: F001-F191</p>
+          <p>Coverage: F001-F236</p>
         </div>
       </aside>
       <main class="workspace">
@@ -1471,6 +1472,367 @@
                     </select></label
                   >
                   <button type="submit">Create purchase order</button>
+                </form>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section class="view" data-panel="finance">
+          <div class="metrics compact-metrics" id="finance-metrics"></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F192-F236</p>
+                  <h2>Billing, payments, claims and plans</h2>
+                </div>
+              </div>
+              <div class="grid three" id="finance-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Finance alerts</h2>
+                <div id="finance-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Invoices</h2>
+                <div id="invoice-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Payments</h2>
+                <div id="payment-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Insurance claims</h2>
+                <div id="claim-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Wellness plans</h2>
+                <div id="wellness-plan-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Create invoice</h2></div>
+              <form class="form-card" data-form="invoice">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="invoice-patient-options"
+                    required
+                  ></select
+                ></label>
+                <label
+                  >Visit<select
+                    name="visitId"
+                    id="finance-visit-options"
+                  ></select
+                ></label>
+                <label
+                  >Type<select name="invoiceType">
+                    <option value="invoice">Invoice</option>
+                    <option value="estimate">Estimate</option>
+                  </select></label
+                >
+                <label
+                  >Document number<input
+                    name="documentNumber"
+                    placeholder="INV-2026-1001"
+                /></label>
+                <label
+                  >Currency<select name="currency">
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="CHF">CHF</option>
+                    <option value="PLN">PLN</option>
+                  </select></label
+                >
+                <label
+                  >Country<input name="country" placeholder="XK" value="XK"
+                /></label>
+                <label
+                  >Status<select name="status">
+                    <option value="draft">Draft</option>
+                    <option value="pending-approval">Pending approval</option>
+                    <option value="issued">Issued</option>
+                  </select></label
+                >
+                <label
+                  >Payment status<select name="paymentStatus">
+                    <option value="unpaid">Unpaid</option>
+                    <option value="partial">Partial</option>
+                    <option value="paid">Paid</option>
+                  </select></label
+                >
+                <label>Issue date<input name="issueDate" type="date" /></label>
+                <label>Due date<input name="dueDate" type="date" /></label>
+                <label
+                  >VAT rate<input
+                    name="vatRate"
+                    type="number"
+                    step="0.1"
+                    value="18"
+                /></label>
+                <label
+                  >Discount type<select name="discountType">
+                    <option value="percent">Percent</option>
+                    <option value="fixed">Fixed</option>
+                  </select></label
+                >
+                <label
+                  >Discount value<input
+                    name="discountValue"
+                    type="number"
+                    step="0.01"
+                    value="0"
+                /></label>
+                <label
+                  >Description<input
+                    name="description"
+                    placeholder="Consultation service"
+                    required
+                /></label>
+                <label
+                  >Quantity<input
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    value="1"
+                /></label>
+                <label
+                  >Unit price EUR<input
+                    name="unitPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                /></label>
+                <label
+                  >Bundle<input
+                    name="bundleName"
+                    placeholder="Wellness package"
+                /></label>
+                <button type="submit">Create invoice</button>
+              </form>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Register payment</h2></div>
+                <form class="form-card" data-form="payment">
+                  <label
+                    >Invoice<select
+                      name="invoiceId"
+                      id="payment-invoice-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Method<select name="method">
+                      <option value="stripe-card">Stripe card</option>
+                      <option value="cash">Cash</option>
+                      <option value="sepa">SEPA</option>
+                      <option value="manual">Manual</option>
+                    </select></label
+                  >
+                  <label
+                    >Provider<input name="provider" placeholder="Stripe"
+                  /></label>
+                  <label
+                    >Status<select name="status">
+                      <option value="pending">Pending</option>
+                      <option value="captured">Captured</option>
+                    </select></label
+                  >
+                  <label
+                    >Amount<input
+                      name="amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                  /></label>
+                  <label
+                    >Currency<select name="currency">
+                      <option value="EUR">EUR</option>
+                      <option value="GBP">GBP</option>
+                      <option value="CHF">CHF</option>
+                      <option value="PLN">PLN</option>
+                    </select></label
+                  >
+                  <label
+                    >Split count<input
+                      name="splitCount"
+                      type="number"
+                      min="1"
+                      value="1"
+                  /></label>
+                  <label class="checkbox-line"
+                    ><input
+                      name="installmentPlan"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Installment plan</label
+                  >
+                  <label
+                    >Reference<input name="reference" placeholder="pi_..."
+                  /></label>
+                  <button type="submit">Create payment</button>
+                </form>
+              </div>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Submit insurance claim</h2></div>
+                <form class="form-card" data-form="insuranceClaim">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="claim-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Visit<select
+                      name="visitId"
+                      id="claim-visit-options"
+                    ></select
+                  ></label>
+                  <label
+                    >Provider<input
+                      name="provider"
+                      placeholder="Agria"
+                      required
+                  /></label>
+                  <label
+                    >Policy number<input
+                      name="policyNumber"
+                      placeholder="AGR-..."
+                  /></label>
+                  <label
+                    >Claim type<select name="claimType">
+                      <option value="submission">Submission</option>
+                      <option value="pre-auth">Pre-authorization</option>
+                    </select></label
+                  >
+                  <label
+                    >Status<select name="status">
+                      <option value="draft">Draft</option>
+                      <option value="submitted">Submitted</option>
+                      <option value="needs-info">Needs info</option>
+                    </select></label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="preAuthorization"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Pre-authorization</label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="directSettlement"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Direct settlement</label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="autofillFromEmr"
+                      type="checkbox"
+                      value="true"
+                      checked
+                    />
+                    Autofill from EMR</label
+                  >
+                  <label
+                    >Note<textarea
+                      name="note"
+                      placeholder="Claim notes"
+                    ></textarea>
+                  </label>
+                  <button type="submit">Create claim</button>
+                </form>
+              </div>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Create wellness plan</h2></div>
+                <form class="form-card" data-form="wellnessPlan">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="plan-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Plan name<input
+                      name="planName"
+                      placeholder="Canine Wellness"
+                      required
+                  /></label>
+                  <label
+                    >Program<select name="programType">
+                      <option value="wellness">Wellness</option>
+                      <option value="senior">Senior</option>
+                      <option value="puppy">Puppy</option>
+                      <option value="kitten">Kitten</option>
+                      <option value="behavior">Behavior</option>
+                    </select></label
+                  >
+                  <label
+                    >Billing provider<input
+                      name="billingProvider"
+                      placeholder="Stripe Subscriptions"
+                  /></label>
+                  <label
+                    >Status<select name="status">
+                      <option value="draft">Draft</option>
+                      <option value="active">Active</option>
+                      <option value="paused">Paused</option>
+                    </select></label
+                  >
+                  <label
+                    >Monthly fee EUR<input
+                      name="monthlyFee"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                  /></label>
+                  <label class="checkbox-line"
+                    ><input name="autoBilling" type="checkbox" value="true" />
+                    Auto billing</label
+                  >
+                  <label
+                    >Start date<input name="startDate" type="date"
+                  /></label>
+                  <label
+                    >Next billing<input name="nextBillingDate" type="date"
+                  /></label>
+                  <label
+                    >Redemption used<input
+                      name="redemptionUsed"
+                      type="number"
+                      min="0"
+                      value="0"
+                  /></label>
+                  <label
+                    >Redemption total<input
+                      name="redemptionTotal"
+                      type="number"
+                      min="0"
+                      value="4"
+                  /></label>
+                  <label class="checkbox-line"
+                    ><input
+                      name="pauseRequested"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Pause requested</label
+                  >
+                  <label
+                    >Notes<textarea
+                      name="notes"
+                      placeholder="Plan scope"
+                    ></textarea>
+                  </label>
+                  <button type="submit">Create plan</button>
                 </form>
               </div>
             </section>

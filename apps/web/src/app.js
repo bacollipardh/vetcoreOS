@@ -13,6 +13,7 @@ const viewTitles = {
   specialties: "Specialty Modules",
   operations: "Operations Hub",
   inventory: "Pharmacy & Inventory",
+  finance: "Finance Hub",
   audit: "Audit Trail",
   roadmap: "Product Roadmap",
 };
@@ -46,6 +47,11 @@ let latestState = {
   inventoryItems: [],
   purchaseOrders: [],
   controlledLog: [],
+  financeSummary: null,
+  invoices: [],
+  payments: [],
+  insuranceClaims: [],
+  wellnessPlans: [],
   auditEvents: [],
 };
 
@@ -114,6 +120,10 @@ const modalLabels = {
   message: "Compose client message",
   inventory: "Add inventory item",
   purchaseOrder: "Create purchase order",
+  invoice: "Create invoice",
+  payment: "Register payment",
+  insuranceClaim: "Submit insurance claim",
+  wellnessPlan: "Create wellness plan",
 };
 function openModalPanel(panel) {
   if (!panel) return;
@@ -204,6 +214,10 @@ const detailCollections = {
   inventory: "inventoryItems",
   purchaseOrder: "purchaseOrders",
   controlled: "controlledLog",
+  invoice: "invoices",
+  payment: "payments",
+  insuranceClaim: "insuranceClaims",
+  wellnessPlan: "wellnessPlans",
   audit: "auditEvents",
 };
 const detailTitles = {
@@ -221,6 +235,10 @@ const detailTitles = {
   inventory: "Inventory item detail",
   purchaseOrder: "Purchase order detail",
   controlled: "Controlled log detail",
+  invoice: "Invoice detail",
+  payment: "Payment detail",
+  insuranceClaim: "Insurance claim detail",
+  wellnessPlan: "Wellness plan detail",
   audit: "Audit event",
 };
 function ensureDetailModal() {
@@ -648,6 +666,97 @@ function recordDetail(type, record) {
       ),
     ].join("");
   }
+  if (type === "invoice") {
+    return [
+      detailSection("Invoice document", [
+        ["Patient", patientName],
+        ["Owner", record.owner?.displayName],
+        ["Type", record.invoiceType],
+        ["Number", record.documentNumber],
+        ["Status", record.status],
+        ["Payment", record.paymentStatus],
+        ["Currency", record.currency],
+        ["Country", record.country],
+        ["Issue date", record.issueDate],
+        ["Due date", record.dueDate],
+      ]),
+      detailSection(
+        "Amounts",
+        [
+          ["Subtotal", money(record.subtotalCents)],
+          ["Discount", money(record.discountCents)],
+          ["VAT", money(record.vatCents)],
+          ["Total", money(record.totalCents)],
+        ],
+        `${compactList(record.lineItems, "No line items.")}${compactList(record.creditNotes, "No credit notes.")}`,
+      ),
+    ].join("");
+  }
+  if (type === "payment") {
+    return [
+      detailSection("Payment", [
+        ["Patient", patientName],
+        ["Owner", record.owner?.displayName],
+        ["Invoice", record.invoice?.documentNumber],
+        ["Method", record.method],
+        ["Provider", record.provider],
+        ["Status", record.status],
+        ["Amount", money(record.amountCents)],
+        ["Currency", record.currency],
+        [
+          "Received",
+          record.receivedAt
+            ? new Date(record.receivedAt).toLocaleString()
+            : "-",
+        ],
+      ]),
+    ].join("");
+  }
+  if (type === "insuranceClaim") {
+    return [
+      detailSection(
+        "Insurance claim",
+        [
+          ["Patient", patientName],
+          ["Owner", record.owner?.displayName],
+          ["Provider", record.provider],
+          ["Policy", record.policyNumber],
+          ["Claim type", record.claimType],
+          ["Status", record.status],
+          ["Pre-auth", record.preAuthorization ? "Yes" : "No"],
+          ["Direct settlement", record.directSettlement ? "Yes" : "No"],
+          [
+            "Submitted",
+            record.submittedAt
+              ? new Date(record.submittedAt).toLocaleString()
+              : "-",
+          ],
+          ["Approved", money(record.approvedAmountCents)],
+        ],
+        compactList([record.note], "No claim note."),
+      ),
+    ].join("");
+  }
+  if (type === "wellnessPlan") {
+    return [
+      detailSection(
+        "Wellness plan",
+        [
+          ["Patient", patientName],
+          ["Owner", record.owner?.displayName],
+          ["Plan", record.planName],
+          ["Program", record.programType],
+          ["Status", record.status],
+          ["Billing provider", record.billingProvider],
+          ["Monthly fee", money(record.monthlyFeeCents)],
+          ["Auto billing", record.autoBilling ? "Yes" : "No"],
+          ["Next billing", record.nextBillingDate],
+          ["Remaining redemptions", record.remainingRedemptions],
+        ],
+        compactList([record.notes], "No plan notes."),
+      ),
+    ].join("");
+  }
   return detailSection(
     "Record",
     Object.entries(record).filter(
@@ -688,6 +797,18 @@ function inventoryInputs(record) {
 function purchaseOrderInputs(record) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="purchase-order-update" data-id="${record.id}"><h3>PO input</h3><label>Approval<select name="approvalStatus"><option value="pending">pending</option><option value="approved">approved</option></select></label><label>Receiving<select name="receivingStatus"><option value="ordered">ordered</option><option value="receiving">receiving</option><option value="received">received</option></select></label><label>Invoice match<select name="invoiceMatchStatus"><option value="pending">pending</option><option value="matched">matched</option></select></label><label>Invoice reference<input name="invoiceReference" value="${record.invoiceReference || ""}" /></label><button type="submit">Save purchase order</button></form></div>`;
 }
+function invoiceInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="invoice-update" data-id="${record.id}"><h3>Invoice input</h3><label>Status<select name="status"><option value="draft">draft</option><option value="pending-approval">pending-approval</option><option value="approved">approved</option><option value="issued">issued</option></select></label><label>Payment status<select name="paymentStatus"><option value="unpaid">unpaid</option><option value="partial">partial</option><option value="paid">paid</option><option value="overdue">overdue</option></select></label><label>Discount type<select name="discountType"><option value="percent">percent</option><option value="fixed">fixed</option></select></label><label>Discount value<input name="discountValue" type="number" value="${record.discountValue || 0}" /></label><label>Fiscal printer<select name="fiscalPrinterStatus"><option value="not-sent">not-sent</option><option value="sent">sent</option><option value="not-applicable">not-applicable</option></select></label><button type="submit">Save invoice</button></form><form class="form-card" data-detail-form="invoice-credit-note" data-id="${record.id}"><h3>Add credit note</h3><label>Reason<input name="reason" required /></label><label>Amount EUR<input name="amount" type="number" step="0.01" required /></label><button type="submit">Add credit note</button></form></div>`;
+}
+function paymentInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="payment-update" data-id="${record.id}"><h3>Payment input</h3><label>Status<select name="status"><option value="pending">pending</option><option value="captured">captured</option><option value="failed">failed</option><option value="refunded">refunded</option></select></label><label>Split count<input name="splitCount" type="number" min="1" value="${record.splitCount || 1}" /></label><label class="checkbox-line"><input name="installmentPlan" type="checkbox" value="true" ${record.installmentPlan ? "checked" : ""} /> Installment plan</label><label>Reference<input name="reference" value="${record.reference || ""}" /></label><button type="submit">Save payment</button></form></div>`;
+}
+function insuranceClaimInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="insurance-claim-update" data-id="${record.id}"><h3>Claim input</h3><label>Status<select name="status"><option value="draft">draft</option><option value="submitted">submitted</option><option value="approved">approved</option><option value="needs-info">needs-info</option></select></label><label>Approved amount EUR<input name="approvedAmount" type="number" step="0.01" value="${((record.approvedAmountCents || 0) / 100).toFixed(2)}" /></label><label>Note<textarea name="note">${record.note || ""}</textarea></label><button type="submit">Save claim</button></form></div>`;
+}
+function wellnessPlanInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="wellness-plan-update" data-id="${record.id}"><h3>Plan input</h3><label>Status<select name="status"><option value="draft">draft</option><option value="active">active</option><option value="paused">paused</option><option value="cancelled">cancelled</option></select></label><label>Next billing<input name="nextBillingDate" type="date" value="${record.nextBillingDate || ""}" /></label><label>Redemption used<input name="redemptionUsed" type="number" min="0" value="${record.redemptionUsed || 0}" /></label><label class="checkbox-line"><input name="pauseRequested" type="checkbox" value="true" ${record.pauseRequested ? "checked" : ""} /> Pause requested</label><label>Notes<textarea name="notes">${record.notes || ""}</textarea></label><button type="submit">Save plan</button></form></div>`;
+}
 function visitInputs(visit) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="visit-soap" data-id="${visit.id}"><h3>Clinical input</h3><label>Anamnesis<textarea name="anamnesis">${visit.anamnesis || ""}</textarea></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" value="${visit.physicalExam?.temperatureC || ""}" /></label><label>Pulse bpm<input name="pulseBpm" type="number" value="${visit.physicalExam?.pulseBpm || ""}" /></label><label>Respiration rpm<input name="respirationRpm" type="number" value="${visit.physicalExam?.respirationRpm || ""}" /></label><label>Diagnosis<input name="diagnosis" value="${visit.diagnoses?.[0]?.label || ""}" /></label><label>Treatment plan<input name="treatmentPlan" value="${(visit.treatmentPlan || []).join(", ")}" /></label><button type="submit">Save visit info</button></form><form class="form-card" data-detail-form="visit-procedure" data-id="${visit.id}"><h3>Add procedure</h3><label>Procedure<input name="procedureName" required /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" /></label><button type="submit">Add procedure</button></form></div>`;
 }
@@ -713,6 +834,10 @@ function openRecordDetail(type, id) {
     message: messageInputs,
     inventory: inventoryInputs,
     purchaseOrder: purchaseOrderInputs,
+    invoice: invoiceInputs,
+    payment: paymentInputs,
+    insuranceClaim: insuranceClaimInputs,
+    wellnessPlan: wellnessPlanInputs,
     visit: visitInputs,
     surgery: surgeryInputs,
   };
@@ -760,6 +885,24 @@ function openRecordDetail(type, id) {
       record.receivingStatus || "ordered";
     panel.querySelector('[name="invoiceMatchStatus"]').value =
       record.invoiceMatchStatus || "pending";
+  }
+  if (type === "invoice") {
+    panel.querySelector('[name="status"]').value = record.status || "draft";
+    panel.querySelector('[name="paymentStatus"]').value =
+      record.paymentStatus || "unpaid";
+    panel.querySelector('[name="discountType"]').value =
+      record.discountType || "percent";
+    panel.querySelector('[name="fiscalPrinterStatus"]').value =
+      record.fiscalPrinterStatus || "not-sent";
+  }
+  if (type === "payment") {
+    panel.querySelector('[name="status"]').value = record.status || "pending";
+  }
+  if (type === "insuranceClaim") {
+    panel.querySelector('[name="status"]').value = record.status || "draft";
+  }
+  if (type === "wellnessPlan") {
+    panel.querySelector('[name="status"]').value = record.status || "draft";
   }
   openModalPanel(panel);
 }
@@ -969,6 +1112,52 @@ function controlledRow(record) {
   const statusClass = record.riskStatus === "logged" ? "ok" : "alert";
   return `<article class="record-row"><header><div><h3>${record.inventoryItem?.medicationName || "Controlled item"}</h3><p class="record-meta">${record.patient?.name || "No patient"} · ${record.actor} · ${new Date(record.at).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span><button class="text-button" type="button" data-detail-type="controlled" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">${record.action} ${record.units} unit(s) · Remaining ${record.remainingUnits}</p><div class="badges"><span class="badge">${record.authorityReportStatus}</span><span class="badge">${record.reconciliationStatus}</span></div></article>`;
 }
+function invoiceRow(record) {
+  const statusClass = ["issued", "paid"].includes(record.riskStatus)
+    ? "ok"
+    : "alert";
+  const approveAction =
+    record.status === "approved" || record.invoiceType !== "estimate"
+      ? ""
+      : `<button class="text-button" type="button" data-approve-invoice-id="${record.id}">Approve</button>`;
+  const issueAction =
+    record.status === "issued"
+      ? ""
+      : `<button class="text-button" type="button" data-issue-invoice-id="${record.id}">Issue</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.documentNumber}</h3><p class="record-meta">${record.invoiceType} · ${record.currency} · due ${record.dueDate}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${approveAction}${issueAction}<button class="text-button" type="button" data-detail-type="invoice" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Status ${record.status} · Payment ${record.paymentStatus} · VAT ${record.vatRate}% · Discount ${record.discountValue}</p><div class="badges"><span class="badge">${money(record.totalCents)}</span><span class="badge">${record.country}</span><span class="badge">${record.eInvoicingChannel}</span></div></article>`;
+}
+function paymentRow(record) {
+  const statusClass = record.riskStatus === "captured" ? "ok" : "alert";
+  const captureAction =
+    record.status === "captured"
+      ? ""
+      : `<button class="text-button" type="button" data-capture-payment-id="${record.id}">Capture</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.method}</h3><p class="record-meta">${record.provider} · ${record.invoice?.documentNumber || "No invoice"} · ${new Date(record.receivedAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${captureAction}<button class="text-button" type="button" data-detail-type="payment" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Amount ${money(record.amountCents)} · ${record.currency} · status ${record.status}</p><div class="badges"><span class="badge">${record.splitCount} split</span><span class="badge">${record.installmentPlan ? "plan" : "standard"}</span></div></article>`;
+}
+function insuranceClaimRow(record) {
+  const statusClass = record.riskStatus === "submitted" ? "ok" : "alert";
+  const submitAction =
+    record.status === "submitted" || record.status === "approved"
+      ? ""
+      : `<button class="text-button" type="button" data-submit-claim-id="${record.id}">Submit</button>`;
+  const approveAction =
+    record.status === "approved"
+      ? ""
+      : `<button class="text-button" type="button" data-approve-claim-id="${record.id}">Approve</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.provider}</h3><p class="record-meta">${record.claimType} · policy ${record.policyNumber} · ${new Date(record.submittedAt).toLocaleDateString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${submitAction}${approveAction}<button class="text-button" type="button" data-detail-type="insuranceClaim" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Status ${record.status} · Direct settlement ${record.directSettlement ? "yes" : "no"} · Pre-auth ${record.preAuthorization ? "yes" : "no"}</p><div class="badges"><span class="badge">${money(record.approvedAmountCents)}</span><span class="badge">${record.autofillFromEmr ? "EMR autofill" : "manual"}</span></div></article>`;
+}
+function wellnessPlanRow(record) {
+  const statusClass = record.riskStatus === "active" ? "ok" : "alert";
+  const activateAction =
+    record.status === "active"
+      ? ""
+      : `<button class="text-button" type="button" data-activate-plan-id="${record.id}">Activate</button>`;
+  const pauseAction =
+    record.status === "paused"
+      ? ""
+      : `<button class="text-button" type="button" data-pause-plan-id="${record.id}">Pause</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.planName}</h3><p class="record-meta">${record.programType} · ${record.billingProvider} · next ${record.nextBillingDate}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${activateAction}${pauseAction}<button class="text-button" type="button" data-detail-type="wellnessPlan" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Monthly ${money(record.monthlyFeeCents)} · Redemptions ${record.redemptionUsed}/${record.redemptionTotal}</p><div class="badges"><span class="badge">${record.status}</span><span class="badge">${record.autoBilling ? "auto-bill" : "manual bill"}</span></div></article>`;
+}
 function auditRow(event) {
   return `<article class="record-row"><header><div><h3>${event.summary}</h3><p class="record-meta">${new Date(event.at).toLocaleString()} · ${event.actor}</p></div><div class="visit-actions"><span class="badge">${event.action}</span><span class="badge">${event.entityType}</span></div></header><p class="record-meta">Record: ${event.entityId}</p></article>`;
 }
@@ -1057,6 +1246,34 @@ function patientTimeline(patient, visits) {
         `<article class="timeline-item"><span>${new Date(record.at).toLocaleDateString()}</span><strong>Controlled drug: ${record.inventoryItem?.medicationName || "Medication"}</strong><p>${record.action} ${record.units} unit(s) · remaining ${record.remainingUnits}</p><small>F188-F191 controlled substances</small></article>`,
     )
     .join("");
+  const invoiceItems = latestState.invoices
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${record.issueDate}</span><strong>${record.documentNumber}</strong><p>${record.invoiceType} · ${record.paymentStatus} · ${money(record.totalCents || 0)}</p><small>F192-F206 billing workflow</small></article>`,
+    )
+    .join("");
+  const paymentItems = latestState.payments
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.receivedAt).toLocaleDateString()}</span><strong>${record.method} payment</strong><p>${record.status} · ${money(record.amountCents)}</p><small>F207-F222 payment workflow</small></article>`,
+    )
+    .join("");
+  const claimItems = latestState.insuranceClaims
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.submittedAt).toLocaleDateString()}</span><strong>${record.provider} claim</strong><p>${record.status} · ${record.claimType}</p><small>F223-F229 insurance workflow</small></article>`,
+    )
+    .join("");
+  const planItems = latestState.wellnessPlans
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${record.startDate}</span><strong>${record.planName}</strong><p>${record.status} · next billing ${record.nextBillingDate}</p><small>F230-F236 wellness plans</small></article>`,
+    )
+    .join("");
   const weightItems =
     patient.weightHistory
       ?.map(
@@ -1075,8 +1292,12 @@ function patientTimeline(patient, visits) {
     appointmentItems ||
     messageItems ||
     controlledItems ||
+    invoiceItems ||
+    paymentItems ||
+    claimItems ||
+    planItems ||
     weightItems
-    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${controlledItems}${weightItems}`
+    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${controlledItems}${invoiceItems}${paymentItems}${claimItems}${planItems}${weightItems}`
     : '<p class="muted">No clinical timeline yet.</p>';
 }
 function patientInputs(patient) {
@@ -1133,6 +1354,15 @@ function fillAppointmentSelect(select, appointments) {
     )
     .join("");
 }
+function fillInvoiceSelect(select, invoices) {
+  if (!select) return;
+  select.innerHTML = invoices
+    .map(
+      (record) =>
+        `<option value="${record.id}">${record.documentNumber} · ${record.patient?.name || "Patient"} · ${record.paymentStatus}</option>`,
+    )
+    .join("");
+}
 function switchView(view) {
   document
     .querySelectorAll(".nav-item")
@@ -1169,6 +1399,7 @@ function bindTopbar() {
       renderSpecialties();
       renderOperations();
       renderInventory();
+      renderFinance();
       renderAudit();
     });
   document.addEventListener("click", (event) => {
@@ -1284,7 +1515,7 @@ function splitTags(value) {
 function bindWorkflowActions() {
   document.addEventListener("click", async (event) => {
     const button = event.target.closest(
-      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id], [data-dispense-inventory-id], [data-receive-inventory-id], [data-approve-po-id], [data-receive-po-id], [data-match-po-id]",
+      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id], [data-dispense-inventory-id], [data-receive-inventory-id], [data-approve-po-id], [data-receive-po-id], [data-match-po-id], [data-approve-invoice-id], [data-issue-invoice-id], [data-capture-payment-id], [data-submit-claim-id], [data-approve-claim-id], [data-activate-plan-id], [data-pause-plan-id]",
     );
     if (!button) return;
     try {
@@ -1702,6 +1933,67 @@ function bindWorkflowActions() {
         });
         setStatus("Invoice matched.");
       }
+      if (button.dataset.approveInvoiceId) {
+        await fetchJson(`/clinic/invoices/${button.dataset.approveInvoiceId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "approved" }),
+        });
+        setStatus("Estimate approved.");
+      }
+      if (button.dataset.issueInvoiceId) {
+        await fetchJson(`/clinic/invoices/${button.dataset.issueInvoiceId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "issued" }),
+        });
+        setStatus("Invoice issued.");
+      }
+      if (button.dataset.capturePaymentId) {
+        await fetchJson(`/clinic/payments/${button.dataset.capturePaymentId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "captured" }),
+        });
+        setStatus("Payment captured.");
+      }
+      if (button.dataset.submitClaimId) {
+        await fetchJson(
+          `/clinic/insurance-claims/${button.dataset.submitClaimId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "submitted" }),
+          },
+        );
+        setStatus("Insurance claim submitted.");
+      }
+      if (button.dataset.approveClaimId) {
+        await fetchJson(
+          `/clinic/insurance-claims/${button.dataset.approveClaimId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "approved" }),
+          },
+        );
+        setStatus("Insurance claim approved.");
+      }
+      if (button.dataset.activatePlanId) {
+        await fetchJson(
+          `/clinic/wellness-plans/${button.dataset.activatePlanId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "active", pauseRequested: false }),
+          },
+        );
+        setStatus("Wellness plan activated.");
+      }
+      if (button.dataset.pausePlanId) {
+        await fetchJson(
+          `/clinic/wellness-plans/${button.dataset.pausePlanId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "paused", pauseRequested: true }),
+          },
+        );
+        setStatus("Wellness plan paused.");
+      }
       await render();
     } catch (error) {
       setStatus(error.message, "error");
@@ -1747,6 +2039,15 @@ async function submitForm(form) {
     data.prescriptionRequired = data.prescriptionRequired === "true";
     data.controlledSubstance = data.controlledSubstance === "true";
   }
+  if (type === "insuranceClaim") {
+    data.preAuthorization = data.preAuthorization === "true";
+    data.directSettlement = data.directSettlement === "true";
+    data.autofillFromEmr = data.autofillFromEmr === "true";
+  }
+  if (type === "wellnessPlan") {
+    data.autoBilling = data.autoBilling === "true";
+    data.pauseRequested = data.pauseRequested === "true";
+  }
   const endpoints = {
     owner: "/clinic/owners",
     patient: "/clinic/patients",
@@ -1762,6 +2063,10 @@ async function submitForm(form) {
     message: "/clinic/client-messages",
     inventory: "/clinic/inventory-items",
     purchaseOrder: "/clinic/purchase-orders",
+    invoice: "/clinic/invoices",
+    payment: "/clinic/payments",
+    insuranceClaim: "/clinic/insurance-claims",
+    wellnessPlan: "/clinic/wellness-plans",
   };
   const created = await fetchJson(endpoints[type], {
     method: "POST",
@@ -1778,7 +2083,10 @@ async function submitForm(form) {
     type === "lab" ||
     type === "specialty" ||
     type === "appointment" ||
-    type === "message"
+    type === "message" ||
+    type === "invoice" ||
+    type === "insuranceClaim" ||
+    type === "wellnessPlan"
   )
     selectedPatientId = created.patientId;
   form.reset();
@@ -1795,6 +2103,13 @@ async function submitForm(form) {
   if (type === "specialty") switchView("specialties");
   if (type === "appointment" || type === "message") switchView("operations");
   if (type === "inventory" || type === "purchaseOrder") switchView("inventory");
+  if (
+    type === "invoice" ||
+    type === "payment" ||
+    type === "insuranceClaim" ||
+    type === "wellnessPlan"
+  )
+    switchView("finance");
 }
 function bindForms() {
   document.querySelectorAll("form[data-form]").forEach((form) =>
@@ -2305,6 +2620,74 @@ function bindDetailForms() {
         });
         setStatus("Purchase order saved.");
       }
+      if (form.dataset.detailForm === "invoice-update") {
+        await fetchJson(`/clinic/invoices/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            paymentStatus: data.paymentStatus,
+            discountType: data.discountType,
+            discountValue: Number(data.discountValue || 0),
+            fiscalPrinterStatus: data.fiscalPrinterStatus,
+          }),
+        });
+        setStatus("Invoice saved.");
+      }
+      if (form.dataset.detailForm === "invoice-credit-note") {
+        const record = latestState.invoices.find((entry) => entry.id === id);
+        const creditNotes = [
+          ...(record?.creditNotes || []),
+          {
+            at: new Date().toISOString(),
+            reason: data.reason,
+            amountCents: Math.round(Number(data.amount || 0) * 100),
+          },
+        ];
+        await fetchJson(`/clinic/invoices/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ creditNotes }),
+        });
+        form.reset();
+        setStatus("Credit note added.");
+      }
+      if (form.dataset.detailForm === "payment-update") {
+        await fetchJson(`/clinic/payments/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            splitCount: Number(data.splitCount || 1),
+            installmentPlan: data.installmentPlan === "true",
+            reference: data.reference,
+          }),
+        });
+        setStatus("Payment saved.");
+      }
+      if (form.dataset.detailForm === "insurance-claim-update") {
+        await fetchJson(`/clinic/insurance-claims/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            approvedAmountCents: Math.round(
+              Number(data.approvedAmount || 0) * 100,
+            ),
+            note: data.note,
+          }),
+        });
+        setStatus("Insurance claim saved.");
+      }
+      if (form.dataset.detailForm === "wellness-plan-update") {
+        await fetchJson(`/clinic/wellness-plans/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            nextBillingDate: data.nextBillingDate,
+            redemptionUsed: Number(data.redemptionUsed || 0),
+            pauseRequested: data.pauseRequested === "true",
+            notes: data.notes,
+          }),
+        });
+        setStatus("Wellness plan saved.");
+      }
       await render();
       const detailMap = {
         "owner-profile": "owner",
@@ -2327,6 +2710,11 @@ function bindDetailForms() {
         "inventory-update": "inventory",
         "inventory-movement": "inventory",
         "purchase-order-update": "purchaseOrder",
+        "invoice-update": "invoice",
+        "invoice-credit-note": "invoice",
+        "payment-update": "payment",
+        "insurance-claim-update": "insuranceClaim",
+        "wellness-plan-update": "wellnessPlan",
         "visit-soap": "visit",
         "visit-procedure": "visit",
         "surgery-update": "surgery",
@@ -2595,6 +2983,48 @@ function renderInventory() {
   document.querySelector("#controlled-log-list").innerHTML =
     `${recordCount(controlledLog)}${controlledLog.map(controlledRow).join("") || '<p class="muted">No controlled-log entries match the current search.</p>'}`;
 }
+function renderFinance() {
+  const summary = latestState.financeSummary;
+  if (!summary) return;
+  const invoices = filtered(latestState.invoices);
+  const payments = filtered(latestState.payments);
+  const claims = filtered(latestState.insuranceClaims);
+  const plans = filtered(latestState.wellnessPlans);
+  const alerts = filtered(summary.alerts);
+  document.querySelector("#finance-metrics").innerHTML = [
+    metric("Invoices", summary.counts.invoices),
+    metric("Receivables", summary.counts.openReceivables),
+    metric("Claims", summary.counts.claims),
+    metric("Active plans", summary.counts.activePlans),
+  ].join("");
+  document.querySelector("#finance-coverage").innerHTML =
+    summary.featureCoverage
+      .map(
+        (coverage) =>
+          `<article class="card"><div class="badges"><span class="badge">${coverage.range}</span></div><h3>${coverage.area}</h3><p>${coverage.description}</p></article>`,
+      )
+      .join("");
+  document.querySelector("#finance-alerts").innerHTML =
+    alerts
+      .map((record) =>
+        record.documentNumber
+          ? invoiceRow(record)
+          : record.method
+            ? paymentRow(record)
+            : record.policyNumber
+              ? insuranceClaimRow(record)
+              : wellnessPlanRow(record),
+      )
+      .join("") || '<p class="muted">No finance alerts.</p>';
+  document.querySelector("#invoice-list").innerHTML =
+    `${recordCount(invoices)}${invoices.map(invoiceRow).join("") || '<p class="muted">No invoices match the current search.</p>'}`;
+  document.querySelector("#payment-list").innerHTML =
+    `${recordCount(payments)}${payments.map(paymentRow).join("") || '<p class="muted">No payments match the current search.</p>'}`;
+  document.querySelector("#claim-list").innerHTML =
+    `${recordCount(claims)}${claims.map(insuranceClaimRow).join("") || '<p class="muted">No claims match the current search.</p>'}`;
+  document.querySelector("#wellness-plan-list").innerHTML =
+    `${recordCount(plans)}${plans.map(wellnessPlanRow).join("") || '<p class="muted">No wellness plans match the current search.</p>'}`;
+}
 function renderAudit() {
   const events = filtered(latestState.auditEvents);
   document.querySelector("#audit-list").innerHTML =
@@ -2695,6 +3125,15 @@ function renderWorkQueue() {
         latestState.inventorySummary.alerts.length,
       ),
     );
+  if (latestState.financeSummary?.alerts.length)
+    items.push(
+      queueItem(
+        "finance",
+        "Finance follow-up",
+        "Approve estimates, collect payments and work claims or plans.",
+        latestState.financeSummary.alerts.length,
+      ),
+    );
   const count = items.length;
   document.querySelector("#queue-count").textContent = `${count} open`;
   document.querySelector("#work-queue").innerHTML =
@@ -2724,6 +3163,11 @@ async function render() {
     inventoryItems,
     purchaseOrders,
     controlledLog,
+    financeSummary,
+    invoices,
+    payments,
+    insuranceClaims,
+    wellnessPlans,
     operationsSummary,
     appointments,
     clientMessages,
@@ -2749,6 +3193,11 @@ async function render() {
     fetchJson("/clinic/diagnostics"),
     fetchJson("/clinic/labs/summary"),
     fetchJson("/clinic/labs"),
+    fetchJson("/clinic/finance/summary"),
+    fetchJson("/clinic/invoices"),
+    fetchJson("/clinic/payments"),
+    fetchJson("/clinic/insurance-claims"),
+    fetchJson("/clinic/wellness-plans"),
     fetchJson("/clinic/inventory/summary"),
     fetchJson("/clinic/inventory-items"),
     fetchJson("/clinic/purchase-orders"),
@@ -2783,6 +3232,11 @@ async function render() {
     inventoryItems: inventoryItems.items,
     purchaseOrders: purchaseOrders.items,
     controlledLog: controlledLog.items,
+    financeSummary,
+    invoices: invoices.items,
+    payments: payments.items,
+    insuranceClaims: insuranceClaims.items,
+    wellnessPlans: wellnessPlans.items,
     operationsSummary,
     appointments: appointments.items,
     clientMessages: clientMessages.items,
@@ -2855,6 +3309,21 @@ async function render() {
     latestState.patients,
     "name",
   );
+  fillSelect(
+    document.querySelector("#invoice-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#claim-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#plan-patient-options"),
+    latestState.patients,
+    "name",
+  );
   fillVisitSelect(document.querySelector("#visit-options"), latestState.visits);
   fillVisitSelect(
     document.querySelector("#prescription-visit-options"),
@@ -2881,12 +3350,24 @@ async function render() {
     latestState.visits,
   );
   fillVisitSelect(
+    document.querySelector("#finance-visit-options"),
+    latestState.visits,
+  );
+  fillVisitSelect(
+    document.querySelector("#claim-visit-options"),
+    latestState.visits,
+  );
+  fillVisitSelect(
     document.querySelector("#appointment-visit-options"),
     latestState.visits,
   );
   fillAppointmentSelect(
     document.querySelector("#message-appointment-options"),
     latestState.appointments,
+  );
+  fillInvoiceSelect(
+    document.querySelector("#payment-invoice-options"),
+    latestState.invoices,
   );
   document.querySelector("#metrics").innerHTML = [
     metric("Patients", summary.counts.patients),
@@ -2901,6 +3382,7 @@ async function render() {
     metric("Diagnostic alerts", diagnosticSummary.alerts.length),
     metric("Lab alerts", labSummary.alerts.length),
     metric("Inventory alerts", inventorySummary.alerts.length),
+    metric("Finance alerts", financeSummary.alerts.length),
     metric("Operations alerts", operationsSummary.alerts.length),
     metric("Specialty alerts", specialtySummary.alerts.length),
     metric("Audit events", auditEvents.items.length),
@@ -2921,6 +3403,7 @@ async function render() {
   renderDiagnostics();
   renderLabs();
   renderInventory();
+  renderFinance();
   renderOperations();
   renderSpecialties();
   renderAudit();

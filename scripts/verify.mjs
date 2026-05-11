@@ -13,6 +13,10 @@ import {
   getDiagnosticSummary,
 } from "../packages/shared/diagnostics.mjs";
 import {
+  financeFeatureCoverage,
+  getFinanceSummary,
+} from "../packages/shared/finance.mjs";
+import {
   getHospitalizationSummary,
   hospitalizationFeatureCoverage,
 } from "../packages/shared/hospitalizations.mjs";
@@ -130,6 +134,12 @@ for (const range of ["F169-F175", "F176-F182", "F183-F191"]) {
   }
 }
 
+for (const range of ["F192-F206", "F207-F222", "F223-F236"]) {
+  if (!financeFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P3 finance coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
 const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
 const prescriptionSummary = getPrescriptionSummary(clinicCoreSeed);
@@ -140,6 +150,7 @@ const labSummary = getLabSummary(clinicCoreSeed);
 const specialtySummary = getSpecialtySummary(clinicCoreSeed);
 const operationsSummary = getOperationsSummary(clinicCoreSeed);
 const inventorySummary = getInventorySummary(clinicCoreSeed);
+const financeSummary = getFinanceSummary(clinicCoreSeed);
 if (
   summary.counts.patients < 2 ||
   summary.counts.owners < 2 ||
@@ -152,7 +163,8 @@ if (
   labSummary.counts.labs < 2 ||
   specialtySummary.counts.records < 2 ||
   operationsSummary.counts.appointments < 3 ||
-  inventorySummary.counts.items < 3
+  inventorySummary.counts.items < 3 ||
+  financeSummary.counts.invoices < 2
 ) {
   throw new Error("Clinic core seed data is incomplete");
 }
@@ -214,4 +226,7 @@ console.log(
 );
 console.log(
   `Verified P3 inventory seed with ${inventorySummary.counts.items} items, ${inventorySummary.counts.openPurchaseOrders} open purchase orders and ${inventorySummary.counts.controlledOpen} controlled reconciliations.`,
+);
+console.log(
+  `Verified P3 finance seed with ${financeSummary.counts.invoices} invoices, ${financeSummary.counts.claims} claims and ${financeSummary.counts.activePlans} active plans.`,
 );

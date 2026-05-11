@@ -338,6 +338,85 @@ if (
 )
   throw new Error("Inventory summary failed");
 
+const invoice = await request("/clinic/invoices", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    visitId: visit.id,
+    invoiceType: "invoice",
+    documentNumber: "SMOKE-INV-001",
+    currency: "EUR",
+    country: "XK",
+    status: "draft",
+    paymentStatus: "unpaid",
+    issueDate: "2026-05-11",
+    dueDate: "2026-05-20",
+    vatRate: 18,
+    discountType: "percent",
+    discountValue: 5,
+    description: "Smoke consultation fee",
+    quantity: 1,
+    unitPrice: 25,
+  }),
+});
+if (!invoice.id || invoice.patientId !== patient.id)
+  throw new Error("Invoice create failed");
+
+const payment = await request("/clinic/payments", {
+  method: "POST",
+  body: JSON.stringify({
+    invoiceId: invoice.id,
+    method: "cash",
+    provider: "Manual",
+    status: "pending",
+    amount: 10,
+    currency: "EUR",
+    splitCount: 2,
+  }),
+});
+if (!payment.id || payment.invoiceId !== invoice.id)
+  throw new Error("Payment create failed");
+
+const claim = await request("/clinic/insurance-claims", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    visitId: visit.id,
+    provider: "Smoke Insurance",
+    policyNumber: "SMOKE-POL-1",
+    claimType: "submission",
+    status: "draft",
+    autofillFromEmr: true,
+    note: "Smoke claim",
+  }),
+});
+if (!claim.id || claim.patientId !== patient.id)
+  throw new Error("Insurance claim create failed");
+
+const plan = await request("/clinic/wellness-plans", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    planName: "Smoke Wellness",
+    programType: "wellness",
+    billingProvider: "Manual",
+    status: "draft",
+    monthlyFee: 15,
+    autoBilling: false,
+    redemptionUsed: 0,
+    redemptionTotal: 4,
+  }),
+});
+if (!plan.id || plan.patientId !== patient.id)
+  throw new Error("Wellness plan create failed");
+
+const financeSummary = await request("/clinic/finance/summary");
+if (
+  financeSummary.counts.invoices < 1 ||
+  financeSummary.featureCoverage.length !== 3
+)
+  throw new Error("Finance summary failed");
+
 const currentVaccination = await request(
   `/clinic/vaccinations/${vaccination.id}`,
   {
@@ -606,6 +685,55 @@ if (
 )
   throw new Error("Purchase order workflow action failed");
 
+const updatedInvoice = await request(`/clinic/invoices/${invoice.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({
+    status: "issued",
+    paymentStatus: "partial",
+    creditNotes: [
+      {
+        at: new Date().toISOString(),
+        reason: "Smoke refund",
+        amountCents: 200,
+      },
+    ],
+  }),
+});
+if (updatedInvoice.status !== "issued" || updatedInvoice.creditNotes.length < 1)
+  throw new Error("Invoice workflow action failed");
+
+const updatedPayment = await request(`/clinic/payments/${payment.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({
+    status: "captured",
+    reference: "SMOKE-PAY-1",
+  }),
+});
+if (updatedPayment.status !== "captured")
+  throw new Error("Payment workflow action failed");
+
+const updatedClaim = await request(`/clinic/insurance-claims/${claim.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({
+    status: "approved",
+    approvedAmountCents: 1200,
+  }),
+});
+if (updatedClaim.status !== "approved")
+  throw new Error("Insurance claim workflow action failed");
+
+const updatedPlan = await request(`/clinic/wellness-plans/${plan.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({
+    status: "active",
+    autoBilling: true,
+    pauseRequested: false,
+    redemptionUsed: 1,
+  }),
+});
+if (updatedPlan.status !== "active" || updatedPlan.redemptionUsed !== 1)
+  throw new Error("Wellness plan workflow action failed");
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: "PATCH",
   body: JSON.stringify({
@@ -640,6 +768,20 @@ if (
   !audit.items.some(
     (event) =>
       event.entityType === "purchase-order" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) => event.entityType === "invoice" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) => event.entityType === "payment" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "insurance-claim" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "wellness-plan" && event.action === "updated",
   )
 ) {
   throw new Error("Audit trail did not capture create/update workflow events");

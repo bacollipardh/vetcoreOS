@@ -72,6 +72,18 @@ function normalizeState(state) {
     controlledLog: Array.isArray(state.controlledLog)
       ? state.controlledLog
       : clone(clinicCoreSeed.controlledLog || []),
+    invoices: Array.isArray(state.invoices)
+      ? state.invoices
+      : clone(clinicCoreSeed.invoices || []),
+    payments: Array.isArray(state.payments)
+      ? state.payments
+      : clone(clinicCoreSeed.payments || []),
+    insuranceClaims: Array.isArray(state.insuranceClaims)
+      ? state.insuranceClaims
+      : clone(clinicCoreSeed.insuranceClaims || []),
+    wellnessPlans: Array.isArray(state.wellnessPlans)
+      ? state.wellnessPlans
+      : clone(clinicCoreSeed.wellnessPlans || []),
     auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents : [],
   };
 }
@@ -1109,6 +1121,239 @@ export async function updatePurchaseOrder(id, input) {
   );
   await writeClinicState(state);
   return state.purchaseOrders[index];
+}
+
+export async function createInvoice(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const ownerId =
+    normalizeText(input.ownerId) ||
+    patient.ownerIds.find((id) =>
+      state.owners.some((owner) => owner.id === id),
+    );
+  if (!ownerId) throw new Error("valid ownerId is required");
+  const invoice = {
+    id: makeId("fin"),
+    patientId: patient.id,
+    ownerId,
+    visitId: normalizeText(input.visitId) || null,
+    invoiceType: normalizeText(input.invoiceType, "invoice"),
+    documentNumber: normalizeText(
+      input.documentNumber,
+      `DOC-${Date.now().toString(36).toUpperCase()}`,
+    ),
+    currency: normalizeText(input.currency, "EUR"),
+    country: normalizeText(input.country, "XK"),
+    status: normalizeText(input.status, "draft"),
+    paymentStatus: normalizeText(input.paymentStatus, "unpaid"),
+    issueDate: normalizeText(input.issueDate, nowIso().slice(0, 10)),
+    dueDate: normalizeText(input.dueDate, nowIso().slice(0, 10)),
+    vatRate: Number(input.vatRate || 0),
+    reducedVatApplied: Boolean(input.reducedVatApplied),
+    discountType: normalizeText(input.discountType, "percent"),
+    discountValue: Number(input.discountValue || 0),
+    bundleName: normalizeText(input.bundleName),
+    eInvoicingChannel: normalizeText(input.eInvoicingChannel, "manual"),
+    fiscalPrinterStatus: normalizeText(input.fiscalPrinterStatus, "not-sent"),
+    lineItems: [
+      {
+        description: normalizeText(input.description, "Service line"),
+        quantity: Number(input.quantity || 1),
+        unitPriceCents: Math.round(Number(input.unitPrice || 0) * 100),
+      },
+    ],
+    creditNotes: [],
+  };
+  state.invoices.push(invoice);
+  appendAudit(
+    state,
+    "created",
+    "invoice",
+    invoice.id,
+    `Created ${invoice.invoiceType} ${invoice.documentNumber}`,
+  );
+  await writeClinicState(state);
+  return invoice;
+}
+
+export async function updateInvoice(id, input) {
+  const state = await readClinicState();
+  const index = state.invoices.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.invoices[index] = { ...state.invoices[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "invoice",
+    id,
+    `Updated invoice ${state.invoices[index].documentNumber}`,
+  );
+  await writeClinicState(state);
+  return state.invoices[index];
+}
+
+export async function createPayment(input) {
+  const state = await readClinicState();
+  const invoice = state.invoices.find((entry) => entry.id === input.invoiceId);
+  if (!invoice) throw new Error("valid invoiceId is required");
+  const payment = {
+    id: makeId("pay"),
+    invoiceId: invoice.id,
+    patientId: invoice.patientId,
+    ownerId: invoice.ownerId,
+    method: normalizeText(input.method, "cash"),
+    provider: normalizeText(input.provider, "Manual"),
+    status: normalizeText(input.status, "pending"),
+    amountCents: Math.round(Number(input.amount || 0) * 100),
+    currency: normalizeText(input.currency, invoice.currency || "EUR"),
+    splitCount: Number(input.splitCount || 1),
+    installmentPlan: Boolean(input.installmentPlan),
+    receivedAt: normalizeText(input.receivedAt, nowIso()),
+    reference: normalizeText(input.reference),
+  };
+  state.payments.push(payment);
+  appendAudit(
+    state,
+    "created",
+    "payment",
+    payment.id,
+    `Created payment for ${invoice.documentNumber}`,
+  );
+  await writeClinicState(state);
+  return payment;
+}
+
+export async function updatePayment(id, input) {
+  const state = await readClinicState();
+  const index = state.payments.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.payments[index] = { ...state.payments[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "payment",
+    id,
+    `Updated payment ${state.payments[index].reference || state.payments[index].id}`,
+  );
+  await writeClinicState(state);
+  return state.payments[index];
+}
+
+export async function createInsuranceClaim(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const ownerId =
+    normalizeText(input.ownerId) ||
+    patient.ownerIds.find((id) =>
+      state.owners.some((owner) => owner.id === id),
+    );
+  if (!ownerId) throw new Error("valid ownerId is required");
+  const claim = {
+    id: makeId("clm"),
+    patientId: patient.id,
+    ownerId,
+    visitId: normalizeText(input.visitId) || null,
+    provider: normalizeText(input.provider, "Insurance provider"),
+    policyNumber: normalizeText(input.policyNumber),
+    claimType: normalizeText(input.claimType, "submission"),
+    status: normalizeText(input.status, "draft"),
+    preAuthorization: Boolean(input.preAuthorization),
+    directSettlement: Boolean(input.directSettlement),
+    autofillFromEmr: Boolean(input.autofillFromEmr),
+    submittedAt: normalizeText(input.submittedAt, nowIso()),
+    approvedAmountCents: Math.round(Number(input.approvedAmount || 0) * 100),
+    note: normalizeText(input.note),
+  };
+  state.insuranceClaims.push(claim);
+  appendAudit(
+    state,
+    "created",
+    "insurance-claim",
+    claim.id,
+    `Created insurance claim ${claim.provider}`,
+  );
+  await writeClinicState(state);
+  return claim;
+}
+
+export async function updateInsuranceClaim(id, input) {
+  const state = await readClinicState();
+  const index = state.insuranceClaims.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.insuranceClaims[index] = {
+    ...state.insuranceClaims[index],
+    ...input,
+    id,
+  };
+  appendAudit(
+    state,
+    "updated",
+    "insurance-claim",
+    id,
+    `Updated insurance claim ${state.insuranceClaims[index].provider}`,
+  );
+  await writeClinicState(state);
+  return state.insuranceClaims[index];
+}
+
+export async function createWellnessPlan(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const ownerId =
+    normalizeText(input.ownerId) ||
+    patient.ownerIds.find((id) =>
+      state.owners.some((owner) => owner.id === id),
+    );
+  if (!ownerId) throw new Error("valid ownerId is required");
+  const plan = {
+    id: makeId("wlp"),
+    patientId: patient.id,
+    ownerId,
+    planName: normalizeText(input.planName, "Wellness plan"),
+    programType: normalizeText(input.programType, "wellness"),
+    billingProvider: normalizeText(input.billingProvider, "Manual"),
+    status: normalizeText(input.status, "draft"),
+    monthlyFeeCents: Math.round(Number(input.monthlyFee || 0) * 100),
+    autoBilling: Boolean(input.autoBilling),
+    startDate: normalizeText(input.startDate, nowIso().slice(0, 10)),
+    nextBillingDate: normalizeText(
+      input.nextBillingDate,
+      nowIso().slice(0, 10),
+    ),
+    redemptionUsed: Number(input.redemptionUsed || 0),
+    redemptionTotal: Number(input.redemptionTotal || 0),
+    pauseRequested: Boolean(input.pauseRequested),
+    notes: normalizeText(input.notes),
+  };
+  state.wellnessPlans.push(plan);
+  appendAudit(
+    state,
+    "created",
+    "wellness-plan",
+    plan.id,
+    `Created wellness plan ${plan.planName}`,
+  );
+  await writeClinicState(state);
+  return plan;
+}
+
+export async function updateWellnessPlan(id, input) {
+  const state = await readClinicState();
+  const index = state.wellnessPlans.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.wellnessPlans[index] = { ...state.wellnessPlans[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "wellness-plan",
+    id,
+    `Updated wellness plan ${state.wellnessPlans[index].planName}`,
+  );
+  await writeClinicState(state);
+  return state.wellnessPlans[index];
 }
 
 function nextYearDate(dateText) {

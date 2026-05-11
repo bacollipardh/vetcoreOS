@@ -11,6 +11,13 @@ import {
   listDiagnostics,
 } from "../../../packages/shared/diagnostics.mjs";
 import {
+  getFinanceSummary,
+  listInsuranceClaims,
+  listInvoices,
+  listPayments,
+  listWellnessPlans,
+} from "../../../packages/shared/finance.mjs";
+import {
   getHospitalizationSummary,
   listHospitalizations,
 } from "../../../packages/shared/hospitalizations.mjs";
@@ -45,6 +52,8 @@ import {
 } from "../../../packages/shared/vaccinations.mjs";
 import {
   createDiagnostic,
+  createInvoice,
+  createInsuranceClaim,
   createHospitalization,
   createInventoryItem,
   createLab,
@@ -52,20 +61,25 @@ import {
   createClientMessage,
   createOwner,
   createPatient,
+  createPayment,
   createPurchaseOrder,
   createPrescription,
   createSurgery,
   createSpecialty,
   createVaccination,
   createVisit,
+  createWellnessPlan,
   readClinicState,
   updateDiagnostic,
+  updateInvoice,
+  updateInsuranceClaim,
   updateHospitalization,
   updateInventoryItem,
   updateLab,
   updateAppointment,
   updateClientMessage,
   updateOwner,
+  updatePayment,
   updatePatient,
   updatePurchaseOrder,
   updatePrescription,
@@ -73,6 +87,7 @@ import {
   updateSpecialty,
   updateVaccination,
   updateVisit,
+  updateWellnessPlan,
 } from "./clinic-repository.mjs";
 
 function sendJson(response, statusCode, payload) {
@@ -258,6 +273,48 @@ export function createVetCoreApiServer() {
 
       if (
         request.method === "GET" &&
+        url.pathname === "/clinic/finance/summary"
+      ) {
+        await sendClinicPayload(response, (state) => getFinanceSummary(state));
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/clinic/invoices") {
+        await sendClinicPayload(response, (state) => ({
+          items: listInvoices(state),
+        }));
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/clinic/payments") {
+        await sendClinicPayload(response, (state) => ({
+          items: listPayments(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/insurance-claims"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listInsuranceClaims(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/wellness-plans"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listWellnessPlans(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
         url.pathname === "/clinic/inventory/summary"
       ) {
         await sendClinicPayload(response, (state) =>
@@ -426,6 +483,40 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      if (request.method === "POST" && url.pathname === "/clinic/invoices") {
+        sendJson(response, 201, await createInvoice(await readBody(request)));
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/clinic/payments") {
+        sendJson(response, 201, await createPayment(await readBody(request)));
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/insurance-claims"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createInsuranceClaim(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/wellness-plans"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createWellnessPlan(await readBody(request)),
+        );
+        return;
+      }
+
       if (
         request.method === "POST" &&
         url.pathname === "/clinic/inventory-items"
@@ -589,6 +680,53 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      const invoiceId = matchId(url.pathname, "/clinic/invoices");
+      if (request.method === "PATCH" && invoiceId) {
+        const invoice = await updateInvoice(invoiceId, await readBody(request));
+        sendJson(
+          response,
+          invoice ? 200 : 404,
+          invoice || { error: "Invoice not found" },
+        );
+        return;
+      }
+
+      const paymentId = matchId(url.pathname, "/clinic/payments");
+      if (request.method === "PATCH" && paymentId) {
+        const payment = await updatePayment(paymentId, await readBody(request));
+        sendJson(
+          response,
+          payment ? 200 : 404,
+          payment || { error: "Payment not found" },
+        );
+        return;
+      }
+
+      const claimId = matchId(url.pathname, "/clinic/insurance-claims");
+      if (request.method === "PATCH" && claimId) {
+        const claim = await updateInsuranceClaim(
+          claimId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          claim ? 200 : 404,
+          claim || { error: "Insurance claim not found" },
+        );
+        return;
+      }
+
+      const planId = matchId(url.pathname, "/clinic/wellness-plans");
+      if (request.method === "PATCH" && planId) {
+        const plan = await updateWellnessPlan(planId, await readBody(request));
+        sendJson(
+          response,
+          plan ? 200 : 404,
+          plan || { error: "Wellness plan not found" },
+        );
+        return;
+      }
+
       const inventoryItemId = matchId(url.pathname, "/clinic/inventory-items");
       if (request.method === "PATCH" && inventoryItemId) {
         const item = await updateInventoryItem(
@@ -674,6 +812,11 @@ export function createVetCoreApiServer() {
           "/clinic/hospitalizations",
           "/clinic/diagnostics",
           "/clinic/labs",
+          "/clinic/finance/summary",
+          "/clinic/invoices",
+          "/clinic/payments",
+          "/clinic/insurance-claims",
+          "/clinic/wellness-plans",
           "/clinic/inventory/summary",
           "/clinic/inventory-items",
           "/clinic/purchase-orders",
