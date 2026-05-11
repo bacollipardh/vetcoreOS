@@ -599,6 +599,76 @@ export const seedLabs = [
   },
 ];
 
+export const seedSpecialties = [
+  {
+    id: "spec_001",
+    patientId: "pat_001",
+    visitId: "vis_001",
+    specialtyType: "dentistry",
+    title: "Dental chart and periodontal staging",
+    startedAt: "2026-05-03T10:35:00.000Z",
+    status: "active",
+    clinician: "Dr. Elira Hoxha",
+    findings: [
+      {
+        region: "Upper right P4",
+        finding: "Calculus grade 2",
+        stage: "periodontal-stage-2",
+      },
+      {
+        region: "Lower incisors",
+        finding: "Gingivitis",
+        stage: "periodontal-stage-1",
+      },
+    ],
+    tasks: [
+      { label: "Schedule dental cleaning", dueAt: "2026-05-20", done: false },
+      { label: "Send home-care plan", dueAt: "2026-05-03", done: true },
+    ],
+    plan: [
+      "Dental cleaning estimate",
+      "Home brushing plan",
+      "Recheck oral pain in 30 days",
+    ],
+    qualityOfLifeScore: null,
+    attachments: [{ type: "photo", label: "Pre-cleaning oral photo" }],
+    genetics: [],
+  },
+  {
+    id: "spec_002",
+    patientId: "pat_002",
+    visitId: "vis_002",
+    specialtyType: "nutrition",
+    title: "Weight management and GI nutrition",
+    startedAt: "2026-05-04T10:45:00.000Z",
+    status: "draft",
+    clinician: "Dr. Arben Dervishi",
+    findings: [
+      {
+        region: "BCS",
+        finding: "Target 4.0 kg over 12 weeks",
+        stage: "nutrition-plan",
+      },
+    ],
+    tasks: [
+      {
+        label: "Confirm diet trial acceptance",
+        dueAt: "2026-05-11",
+        done: false,
+      },
+      { label: "Upload progress photo", dueAt: "2026-06-04", done: false },
+    ],
+    plan: [
+      "Hydrolyzed protein diet trial",
+      "Weekly weight checks",
+      "Owner photo progress",
+    ],
+    qualityOfLifeScore: null,
+    attachments: [],
+    genetics: [],
+  },
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
@@ -609,6 +679,7 @@ export const clinicCoreSeed = {
   hospitalizations: seedHospitalizations,
   diagnostics: seedDiagnostics,
   labs: seedLabs,
+  specialties: seedSpecialties,
 };
 
 function collection(state, key) {

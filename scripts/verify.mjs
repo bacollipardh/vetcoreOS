@@ -26,6 +26,10 @@ import {
   surgeryFeatureCoverage,
 } from "../packages/shared/surgeries.mjs";
 import {
+  getSpecialtySummary,
+  specialtyFeatureCoverage,
+} from "../packages/shared/specialties.mjs";
+import {
   getVaccinationSummary,
   vaccinationFeatureCoverage,
 } from "../packages/shared/vaccinations.mjs";
@@ -100,6 +104,12 @@ for (const range of ["F095-F101", "F102-F105", "F106-F108"]) {
   }
 }
 
+for (const range of ["F109-F116", "F117-F128", "F129-F132"]) {
+  if (!specialtyFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P2 specialty coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
 const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
 const prescriptionSummary = getPrescriptionSummary(clinicCoreSeed);
@@ -107,6 +117,7 @@ const surgerySummary = getSurgerySummary(clinicCoreSeed);
 const hospitalizationSummary = getHospitalizationSummary(clinicCoreSeed);
 const diagnosticSummary = getDiagnosticSummary(clinicCoreSeed);
 const labSummary = getLabSummary(clinicCoreSeed);
+const specialtySummary = getSpecialtySummary(clinicCoreSeed);
 if (
   summary.counts.patients < 2 ||
   summary.counts.owners < 2 ||
@@ -116,7 +127,8 @@ if (
   surgerySummary.counts.surgeries < 2 ||
   hospitalizationSummary.counts.stays < 2 ||
   diagnosticSummary.counts.diagnostics < 2 ||
-  labSummary.counts.labs < 2
+  labSummary.counts.labs < 2 ||
+  specialtySummary.counts.records < 2
 ) {
   throw new Error("Clinic core seed data is incomplete");
 }
@@ -169,4 +181,7 @@ console.log(
 );
 console.log(
   `Verified P2 lab seed with ${labSummary.counts.labs} records and ${labSummary.alerts.length} alerts.`,
+);
+console.log(
+  `Verified P2 specialty seed with ${specialtySummary.counts.records} records and ${specialtySummary.alerts.length} alerts.`,
 );

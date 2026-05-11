@@ -219,6 +219,34 @@ const labSummary = await request("/clinic/labs/summary");
 if (labSummary.counts.labs < 1 || labSummary.featureCoverage.length !== 3)
   throw new Error("Lab summary failed");
 
+const specialty = await request("/clinic/specialties", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    visitId: visit.id,
+    specialtyType: "dentistry",
+    title: "Smoke dental chart",
+    findings: "Calculus grade 1, Gingivitis",
+    tasks: "Schedule dental follow-up",
+    plan: "Home brushing, Recheck",
+    attachmentType: "photo",
+    attachmentLabel: "Smoke oral photo",
+  }),
+});
+if (
+  !specialty.id ||
+  specialty.patientId !== patient.id ||
+  specialty.tasks.length < 1
+)
+  throw new Error("Specialty create failed");
+
+const specialtySummary = await request("/clinic/specialties/summary");
+if (
+  specialtySummary.counts.records < 1 ||
+  specialtySummary.featureCoverage.length !== 3
+)
+  throw new Error("Specialty summary failed");
+
 const currentVaccination = await request(
   `/clinic/vaccinations/${vaccination.id}`,
   {
@@ -385,6 +413,23 @@ if (
 )
   throw new Error("Lab workflow action failed");
 
+const completedSpecialty = await request(
+  `/clinic/specialties/${specialty.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: "completed",
+      tasks: specialty.tasks.map((task) => ({ ...task, done: true })),
+      qualityOfLifeScore: 62,
+    }),
+  },
+);
+if (
+  completedSpecialty.status !== "completed" ||
+  !completedSpecialty.tasks.every((task) => task.done)
+)
+  throw new Error("Specialty workflow action failed");
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: "PATCH",
   body: JSON.stringify({
@@ -403,6 +448,9 @@ if (
   ) ||
   !audit.items.some(
     (event) => event.entityType === "lab" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) => event.entityType === "specialty" && event.action === "updated",
   )
 ) {
   throw new Error("Audit trail did not capture create/update workflow events");

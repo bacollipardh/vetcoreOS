@@ -20,6 +20,10 @@ import {
   listPrescriptions,
 } from "../../../packages/shared/prescriptions.mjs";
 import {
+  getSpecialtySummary,
+  listSpecialties,
+} from "../../../packages/shared/specialties.mjs";
+import {
   getSurgerySummary,
   listSurgeries,
 } from "../../../packages/shared/surgeries.mjs";
@@ -35,6 +39,7 @@ import {
   createPatient,
   createPrescription,
   createSurgery,
+  createSpecialty,
   createVaccination,
   createVisit,
   readClinicState,
@@ -45,6 +50,7 @@ import {
   updatePatient,
   updatePrescription,
   updateSurgery,
+  updateSpecialty,
   updateVaccination,
   updateVisit,
 } from "./clinic-repository.mjs";
@@ -230,6 +236,23 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/specialties/summary"
+      ) {
+        await sendClinicPayload(response, (state) =>
+          getSpecialtySummary(state),
+        );
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/clinic/specialties") {
+        await sendClinicPayload(response, (state) => ({
+          items: listSpecialties(state),
+        }));
+        return;
+      }
+
       if (request.method === "GET" && url.pathname === "/clinic/audit") {
         await sendClinicPayload(response, (state) => ({
           items: [...state.auditEvents]
@@ -306,6 +329,11 @@ export function createVetCoreApiServer() {
 
       if (request.method === "POST" && url.pathname === "/clinic/labs") {
         sendJson(response, 201, await createLab(await readBody(request)));
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/clinic/specialties") {
+        sendJson(response, 201, await createSpecialty(await readBody(request)));
         return;
       }
 
@@ -419,6 +447,20 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      const specialtyId = matchId(url.pathname, "/clinic/specialties");
+      if (request.method === "PATCH" && specialtyId) {
+        const specialty = await updateSpecialty(
+          specialtyId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          specialty ? 200 : 404,
+          specialty || { error: "Specialty not found" },
+        );
+        return;
+      }
+
       sendJson(response, 404, {
         error: "Not found",
         endpoints: [
@@ -434,6 +476,7 @@ export function createVetCoreApiServer() {
           "/clinic/hospitalizations",
           "/clinic/diagnostics",
           "/clinic/labs",
+          "/clinic/specialties",
           "/clinic/audit",
         ],
       });

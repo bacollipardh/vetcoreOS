@@ -10,6 +10,7 @@ const viewTitles = {
   hospitalizations: "Hospitalization & Boarding",
   diagnostics: "Diagnostics & Imaging",
   labs: "Laboratory",
+  specialties: "Specialty Modules",
   audit: "Audit Trail",
   roadmap: "Product Roadmap",
 };
@@ -33,6 +34,8 @@ let latestState = {
   diagnostics: [],
   labSummary: null,
   labs: [],
+  specialtySummary: null,
+  specialties: [],
   auditEvents: [],
 };
 
@@ -96,6 +99,7 @@ const modalLabels = {
   hospitalization: "Admit patient",
   diagnostic: "Record diagnostic",
   lab: "Create lab order",
+  specialty: "Create specialty record",
 };
 function openModalPanel(panel) {
   if (!panel) return;
@@ -180,6 +184,7 @@ const detailCollections = {
   hospitalization: "hospitalizations",
   diagnostic: "diagnostics",
   lab: "labs",
+  specialty: "specialties",
   audit: "auditEvents",
 };
 const detailTitles = {
@@ -191,6 +196,7 @@ const detailTitles = {
   hospitalization: "Hospitalization detail",
   diagnostic: "Diagnostic detail",
   lab: "Lab detail",
+  specialty: "Specialty detail",
   audit: "Audit event",
 };
 function ensureDetailModal() {
@@ -462,6 +468,32 @@ function recordDetail(type, record) {
       ),
     ].join("");
   }
+  if (type === "specialty") {
+    return [
+      detailSection("Specialty record", [
+        ["Patient", patientName],
+        ["Type", record.specialtyType],
+        ["Title", record.title],
+        ["Status", record.status],
+        ["Risk", record.riskStatus],
+        ["Clinician", record.clinician],
+        [
+          "Started",
+          record.startedAt ? new Date(record.startedAt).toLocaleString() : "-",
+        ],
+        ["Quality of life", record.qualityOfLifeScore ?? "-"],
+      ]),
+      detailSection(
+        "Plan and execution",
+        [
+          ["Open tasks", record.openTaskCount],
+          ["Attachments", record.attachmentCount],
+          ["Plan", record.plan?.join(", ")],
+        ],
+        `${compactList(record.findings, "No findings entered.")}${compactList(record.tasks, "No tasks entered.")}${compactList(record.genetics, "No genetics linked.")}`,
+      ),
+    ].join("");
+  }
   return detailSection(
     "Record",
     Object.entries(record).filter(
@@ -487,6 +519,9 @@ function diagnosticInputs(record) {
 function labInputs(record) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="lab-update" data-id="${record.id}"><h3>Lab input</h3><label>Status<select name="status"><option value="ordered">ordered</option><option value="sent">sent</option><option value="received">received</option><option value="reviewed">reviewed</option></select></label><label>Parser<select name="parserStatus"><option value="manual-entry">manual-entry</option><option value="queued">queued</option><option value="parsed">parsed</option><option value="failed">failed</option></select></label><label>Interpretation<textarea name="interpretation">${record.interpretation?.summary || ""}</textarea></label><label class="checkbox-line"><input name="sharedWithOwner" type="checkbox" value="true" ${record.sharedWithOwner ? "checked" : ""} /> Shared with owner</label><button type="submit">Save lab info</button></form><form class="form-card" data-detail-form="lab-result" data-id="${record.id}"><h3>Add result</h3><label>Analyte<input name="analyte" required /></label><label>Value<input name="value" type="number" step="0.01" /></label><label>Unit<input name="unit" /></label><label>Ref low<input name="referenceLow" type="number" step="0.01" /></label><label>Ref high<input name="referenceHigh" type="number" step="0.01" /></label><button type="submit">Add result</button></form><form class="form-card" data-detail-form="lab-alert" data-id="${record.id}"><h3>Add critical alert</h3><label>Alert<input name="alert" required /></label><button type="submit">Add alert</button></form></div>`;
 }
+function specialtyInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="specialty-update" data-id="${record.id}"><h3>Specialty input</h3><label>Status<select name="status"><option value="active">active</option><option value="draft">draft</option><option value="completed">completed</option></select></label><label>Quality of life score<input name="qualityOfLifeScore" type="number" min="0" max="70" value="${record.qualityOfLifeScore || ""}" /></label><label>Plan<input name="plan" value="${(record.plan || []).join(", ")}" /></label><button type="submit">Save specialty info</button></form><form class="form-card" data-detail-form="specialty-task" data-id="${record.id}"><h3>Add task</h3><label>Task<input name="task" required /></label><label>Due<input name="dueAt" type="date" /></label><button type="submit">Add task</button></form><form class="form-card" data-detail-form="specialty-finding" data-id="${record.id}"><h3>Add finding</h3><label>Region<input name="region" /></label><label>Finding<input name="finding" required /></label><label>Stage<input name="stage" /></label><button type="submit">Add finding</button></form></div>`;
+}
 function visitInputs(visit) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="visit-soap" data-id="${visit.id}"><h3>Clinical input</h3><label>Anamnesis<textarea name="anamnesis">${visit.anamnesis || ""}</textarea></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" value="${visit.physicalExam?.temperatureC || ""}" /></label><label>Pulse bpm<input name="pulseBpm" type="number" value="${visit.physicalExam?.pulseBpm || ""}" /></label><label>Respiration rpm<input name="respirationRpm" type="number" value="${visit.physicalExam?.respirationRpm || ""}" /></label><label>Diagnosis<input name="diagnosis" value="${visit.diagnoses?.[0]?.label || ""}" /></label><label>Treatment plan<input name="treatmentPlan" value="${(visit.treatmentPlan || []).join(", ")}" /></label><button type="submit">Save visit info</button></form><form class="form-card" data-detail-form="visit-procedure" data-id="${visit.id}"><h3>Add procedure</h3><label>Procedure<input name="procedureName" required /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" /></label><button type="submit">Add procedure</button></form></div>`;
 }
@@ -507,6 +542,7 @@ function openRecordDetail(type, id) {
     hospitalization: hospitalizationInputs,
     diagnostic: diagnosticInputs,
     lab: labInputs,
+    specialty: specialtyInputs,
     visit: visitInputs,
     surgery: surgeryInputs,
   };
@@ -537,6 +573,9 @@ function openRecordDetail(type, id) {
     panel.querySelector('[name="status"]').value = record.status || "ordered";
     panel.querySelector('[name="parserStatus"]').value =
       record.parserStatus || "manual-entry";
+  }
+  if (type === "specialty") {
+    panel.querySelector('[name="status"]').value = record.status || "active";
   }
   openModalPanel(panel);
 }
@@ -666,6 +705,19 @@ function labRow(record) {
     : `<button class="text-button" type="button" data-share-lab-id="${record.id}">Share</button>`;
   return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.panelName}</h3><p class="record-meta">${record.testType} · ${record.provider} · ${record.sampleType}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${reviewAction}${shareAction}<button class="text-button" type="button" data-detail-type="lab" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Status ${record.status} · Results ${record.resultCount} · Critical ${record.criticalCount} · Parser ${record.parserStatus}</p><p class="record-meta">Interpretation: ${record.interpretation?.summary || "Interpretation open"}</p><div class="badges"><span class="badge">${record.source}</span><span class="badge">${record.country}</span><span class="badge">${record.sharedWithOwner ? "owner shared" : "internal"}</span></div></article>`;
 }
+function specialtyRow(record) {
+  const statusClass = ["completed", "monitoring"].includes(record.riskStatus)
+    ? "ok"
+    : "alert";
+  const completeAction =
+    record.status === "completed"
+      ? ""
+      : `<button class="text-button" type="button" data-complete-specialty-id="${record.id}">Complete</button>`;
+  const closeTasksAction = record.openTaskCount
+    ? `<button class="text-button" type="button" data-close-specialty-tasks-id="${record.id}">Close tasks</button>`
+    : "";
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.title}</h3><p class="record-meta">${record.specialtyType} · ${record.clinician} · ${new Date(record.startedAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${closeTasksAction}${completeAction}<button class="text-button" type="button" data-detail-type="specialty" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Status ${record.status} · Open tasks ${record.openTaskCount} · Attachments ${record.attachmentCount}</p><p class="record-meta">Plan: ${record.plan?.join(", ") || "No plan yet"}</p><div class="badges"><span class="badge">${record.specialtyType}</span><span class="badge">${record.taskCount} tasks</span><span class="badge">${record.qualityOfLifeScore ?? "no QoL"} QoL</span></div></article>`;
+}
 function auditRow(event) {
   return `<article class="record-row"><header><div><h3>${event.summary}</h3><p class="record-meta">${new Date(event.at).toLocaleString()} · ${event.actor}</p></div><div class="visit-actions"><span class="badge">${event.action}</span><span class="badge">${event.entityType}</span></div></header><p class="record-meta">Record: ${event.entityId}</p></article>`;
 }
@@ -726,6 +778,13 @@ function patientTimeline(patient, visits) {
         `<article class="timeline-item"><span>${new Date(record.orderedAt).toLocaleDateString()}</span><strong>${record.panelName}</strong><p>${record.riskStatus} · ${record.resultCount} results · ${record.provider}</p><small>F095-F108 laboratory workflow</small></article>`,
     )
     .join("");
+  const specialtyItems = latestState.specialties
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.startedAt).toLocaleDateString()}</span><strong>${record.specialtyType}: ${record.title}</strong><p>${record.riskStatus} · ${record.openTaskCount} open tasks</p><small>F109-F132 specialty workflow</small></article>`,
+    )
+    .join("");
   const weightItems =
     patient.weightHistory
       ?.map(
@@ -740,8 +799,9 @@ function patientTimeline(patient, visits) {
     stayItems ||
     diagnosticItems ||
     labItems ||
+    specialtyItems ||
     weightItems
-    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${weightItems}`
+    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${weightItems}`
     : '<p class="muted">No clinical timeline yet.</p>';
 }
 function patientInputs(patient) {
@@ -820,6 +880,7 @@ function bindTopbar() {
       renderHospitalizations();
       renderDiagnostics();
       renderLabs();
+      renderSpecialties();
       renderAudit();
     });
   document.addEventListener("click", (event) => {
@@ -935,7 +996,7 @@ function splitTags(value) {
 function bindWorkflowActions() {
   document.addEventListener("click", async (event) => {
     const button = event.target.closest(
-      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id]",
+      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id]",
     );
     if (!button) return;
     try {
@@ -1111,6 +1172,45 @@ function bindWorkflowActions() {
         selectedPatientId = lab?.patientId || selectedPatientId;
         setStatus("Lab shared with owner.");
       }
+      if (button.dataset.completeSpecialtyId) {
+        const record = latestState.specialties.find(
+          (entry) => entry.id === button.dataset.completeSpecialtyId,
+        );
+        await fetchJson(
+          `/clinic/specialties/${button.dataset.completeSpecialtyId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              status: "completed",
+              tasks: (record?.tasks || []).map((task) => ({
+                ...task,
+                done: true,
+              })),
+            }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Specialty record completed.");
+      }
+      if (button.dataset.closeSpecialtyTasksId) {
+        const record = latestState.specialties.find(
+          (entry) => entry.id === button.dataset.closeSpecialtyTasksId,
+        );
+        await fetchJson(
+          `/clinic/specialties/${button.dataset.closeSpecialtyTasksId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              tasks: (record?.tasks || []).map((task) => ({
+                ...task,
+                done: true,
+              })),
+            }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Specialty tasks closed.");
+      }
       await render();
     } catch (error) {
       setStatus(error.message, "error");
@@ -1153,6 +1253,7 @@ async function submitForm(form) {
     hospitalization: "/clinic/hospitalizations",
     diagnostic: "/clinic/diagnostics",
     lab: "/clinic/labs",
+    specialty: "/clinic/specialties",
   };
   const created = await fetchJson(endpoints[type], {
     method: "POST",
@@ -1166,7 +1267,8 @@ async function submitForm(form) {
     type === "surgery" ||
     type === "hospitalization" ||
     type === "diagnostic" ||
-    type === "lab"
+    type === "lab" ||
+    type === "specialty"
   )
     selectedPatientId = created.patientId;
   form.reset();
@@ -1180,6 +1282,7 @@ async function submitForm(form) {
   if (type === "hospitalization") switchView("hospitalizations");
   if (type === "diagnostic") switchView("diagnostics");
   if (type === "lab") switchView("labs");
+  if (type === "specialty") switchView("specialties");
 }
 function bindForms() {
   document.querySelectorAll("form[data-form]").forEach((form) =>
@@ -1528,6 +1631,45 @@ function bindDetailForms() {
         form.reset();
         setStatus("Lab alert added.");
       }
+      if (form.dataset.detailForm === "specialty-update") {
+        await fetchJson(`/clinic/specialties/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            qualityOfLifeScore: data.qualityOfLifeScore
+              ? Number(data.qualityOfLifeScore)
+              : null,
+            plan: splitTags(data.plan),
+          }),
+        });
+        setStatus("Specialty info saved.");
+      }
+      if (form.dataset.detailForm === "specialty-task") {
+        const record = latestState.specialties.find((entry) => entry.id === id);
+        const tasks = [
+          ...(record?.tasks || []),
+          { label: data.task, dueAt: data.dueAt || null, done: false },
+        ];
+        await fetchJson(`/clinic/specialties/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ tasks }),
+        });
+        form.reset();
+        setStatus("Specialty task added.");
+      }
+      if (form.dataset.detailForm === "specialty-finding") {
+        const record = latestState.specialties.find((entry) => entry.id === id);
+        const findings = [
+          ...(record?.findings || []),
+          { region: data.region, finding: data.finding, stage: data.stage },
+        ];
+        await fetchJson(`/clinic/specialties/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ findings }),
+        });
+        form.reset();
+        setStatus("Specialty finding added.");
+      }
       await render();
       const detailMap = {
         "owner-profile": "owner",
@@ -1541,6 +1683,9 @@ function bindDetailForms() {
         "lab-update": "lab",
         "lab-result": "lab",
         "lab-alert": "lab",
+        "specialty-update": "specialty",
+        "specialty-task": "specialty",
+        "specialty-finding": "specialty",
         "visit-soap": "visit",
         "visit-procedure": "visit",
         "surgery-update": "surgery",
@@ -1716,6 +1861,29 @@ function renderLabs() {
   document.querySelector("#lab-list").innerHTML =
     `${recordCount(labs)}${labs.map(labRow).join("") || '<p class="muted">No labs match the current search.</p>'}`;
 }
+function renderSpecialties() {
+  const summary = latestState.specialtySummary;
+  if (!summary) return;
+  const records = filtered(latestState.specialties);
+  const alerts = filtered(summary.alerts);
+  document.querySelector("#specialty-metrics").innerHTML = [
+    metric("Specialty records", summary.counts.records),
+    metric("Active", summary.counts.active),
+    metric("Open tasks", summary.counts.openTasks),
+  ].join("");
+  document.querySelector("#specialty-coverage").innerHTML =
+    summary.featureCoverage
+      .map(
+        (coverage) =>
+          `<article class="card"><div class="badges"><span class="badge">${coverage.range}</span></div><h3>${coverage.area}</h3><p>${coverage.description}</p></article>`,
+      )
+      .join("");
+  document.querySelector("#specialty-alerts").innerHTML =
+    alerts.map(specialtyRow).join("") ||
+    '<p class="muted">No specialty alerts.</p>';
+  document.querySelector("#specialty-list").innerHTML =
+    `${recordCount(records)}${records.map(specialtyRow).join("") || '<p class="muted">No specialty records match the current search.</p>'}`;
+}
 function renderAudit() {
   const events = filtered(latestState.auditEvents);
   document.querySelector("#audit-list").innerHTML =
@@ -1789,6 +1957,15 @@ function renderWorkQueue() {
         latestState.labSummary.alerts.length,
       ),
     );
+  if (latestState.specialtySummary?.alerts.length)
+    items.push(
+      queueItem(
+        "specialties",
+        "Specialty work pending",
+        "Close specialty tasks, drafts or quality-of-life reviews.",
+        latestState.specialtySummary.alerts.length,
+      ),
+    );
   const count = items.length;
   document.querySelector("#queue-count").textContent = `${count} open`;
   document.querySelector("#work-queue").innerHTML =
@@ -1814,6 +1991,8 @@ async function render() {
     diagnostics,
     labSummary,
     labs,
+    specialtySummary,
+    specialties,
     auditEvents,
   ] = await Promise.all([
     fetchJson("/blueprint"),
@@ -1833,6 +2012,8 @@ async function render() {
     fetchJson("/clinic/diagnostics"),
     fetchJson("/clinic/labs/summary"),
     fetchJson("/clinic/labs"),
+    fetchJson("/clinic/specialties/summary"),
+    fetchJson("/clinic/specialties"),
     fetchJson("/clinic/audit"),
   ]);
   latestState = {
@@ -1853,6 +2034,8 @@ async function render() {
     diagnostics: diagnostics.items,
     labSummary,
     labs: labs.items,
+    specialtySummary,
+    specialties: specialties.items,
     auditEvents: auditEvents.items,
   };
   if (!selectedPatientId && latestState.patients[0])
@@ -1899,6 +2082,11 @@ async function render() {
     latestState.patients,
     "name",
   );
+  fillSelect(
+    document.querySelector("#specialty-patient-options"),
+    latestState.patients,
+    "name",
+  );
   fillVisitSelect(document.querySelector("#visit-options"), latestState.visits);
   fillVisitSelect(
     document.querySelector("#prescription-visit-options"),
@@ -1920,6 +2108,10 @@ async function render() {
     document.querySelector("#lab-visit-options"),
     latestState.visits,
   );
+  fillVisitSelect(
+    document.querySelector("#specialty-visit-options"),
+    latestState.visits,
+  );
   document.querySelector("#metrics").innerHTML = [
     metric("Patients", summary.counts.patients),
     metric("Owners", summary.counts.owners),
@@ -1932,6 +2124,7 @@ async function render() {
     metric("Care alerts", hospitalizationSummary.alerts.length),
     metric("Diagnostic alerts", diagnosticSummary.alerts.length),
     metric("Lab alerts", labSummary.alerts.length),
+    metric("Specialty alerts", specialtySummary.alerts.length),
     metric("Audit events", auditEvents.items.length),
   ].join("");
   document.querySelector("#clinic-summary").innerHTML = summary.featureCoverage
@@ -1949,6 +2142,7 @@ async function render() {
   renderHospitalizations();
   renderDiagnostics();
   renderLabs();
+  renderSpecialties();
   renderAudit();
   document.querySelector("#phases").innerHTML = blueprint.phases
     .map(phaseCard)

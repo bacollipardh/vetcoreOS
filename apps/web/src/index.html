@@ -35,13 +35,14 @@
           </button>
           <button class="nav-item" data-view="diagnostics">Diagnostics</button>
           <button class="nav-item" data-view="labs">Laboratory</button>
+          <button class="nav-item" data-view="specialties">Specialties</button>
           <span class="nav-group">Controls</span>
           <button class="nav-item" data-view="audit">Audit</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
         <div class="sidebar-note">
           <span>P2</span>
-          <p>Coverage: F001-F108</p>
+          <p>Coverage: F001-F132</p>
         </div>
       </aside>
       <main class="workspace">
@@ -934,6 +935,135 @@
                     placeholder="Clinical interpretation"
                   ></textarea></label
                 ><button type="submit">Create lab order</button>
+              </form>
+            </section>
+          </div>
+        </section>
+        <section class="view" data-panel="specialties">
+          <div class="metrics compact-metrics" id="specialty-metrics"></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F109-F132</p>
+                  <h2>Specialty modules</h2>
+                </div>
+              </div>
+              <div class="grid three" id="specialty-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Specialty alerts</h2>
+                <div id="specialty-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Specialty worklist</h2>
+                <div id="specialty-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Create specialty record</h2></div>
+              <form class="form-card" data-form="specialty">
+                <label
+                  >Patient<select
+                    name="patientId"
+                    id="specialty-patient-options"
+                    required
+                  ></select
+                ></label>
+                <label
+                  >Visit<select
+                    name="visitId"
+                    id="specialty-visit-options"
+                  ></select
+                ></label>
+                <label
+                  >Specialty<select name="specialtyType">
+                    <option value="dentistry">Dentistry</option>
+                    <option value="reproduction">Reproduction</option>
+                    <option value="behavior">Behavior</option>
+                    <option value="nutrition">Nutrition</option>
+                    <option value="equine">Equine</option>
+                    <option value="livestock">Livestock</option>
+                    <option value="exotic">Exotic</option>
+                    <option value="shelter">Shelter / Rescue</option>
+                    <option value="breeder">Breeder</option>
+                    <option value="end-of-life">End of life</option>
+                    <option value="genetics">Genetics</option>
+                  </select></label
+                >
+                <label
+                  >Title<input
+                    name="title"
+                    placeholder="Dental chart / Nutrition plan"
+                    required
+                /></label>
+                <label
+                  >Started at<input name="startedAt" type="datetime-local"
+                /></label>
+                <label
+                  >Status<select name="status">
+                    <option value="active">Active</option>
+                    <option value="draft">Draft</option>
+                    <option value="completed">Completed</option>
+                  </select></label
+                >
+                <label
+                  >Clinician<input name="clinician" placeholder="Dr. Demo"
+                /></label>
+                <label
+                  >Region<input
+                    name="region"
+                    placeholder="tooth, hoof, herd, enclosure"
+                /></label>
+                <label
+                  >Findings<input
+                    name="findings"
+                    placeholder="Calculus grade 2, lameness left fore"
+                /></label>
+                <label
+                  >Stage<input
+                    name="stage"
+                    placeholder="periodontal-stage-2, nutrition-plan"
+                /></label>
+                <label
+                  >Tasks<input
+                    name="tasks"
+                    placeholder="Schedule follow-up, send plan"
+                /></label>
+                <label>Task due<input name="taskDueAt" type="date" /></label>
+                <label
+                  >Plan<input
+                    name="plan"
+                    placeholder="Recheck, home care, treatment step"
+                /></label>
+                <label
+                  >Quality of life score<input
+                    name="qualityOfLifeScore"
+                    type="number"
+                    min="0"
+                    max="70"
+                    placeholder="HHHHHMM total"
+                /></label>
+                <label
+                  >Attachment type<input
+                    name="attachmentType"
+                    placeholder="photo, chart, report"
+                /></label>
+                <label
+                  >Attachment label<input
+                    name="attachmentLabel"
+                    placeholder="Dental chart image"
+                /></label>
+                <label
+                  >Genetic provider<input
+                    name="geneticProvider"
+                    placeholder="Embark / Wisdom Panel"
+                /></label>
+                <label
+                  >Genetic test<input
+                    name="geneticTest"
+                    placeholder="MDR1 panel"
+                /></label>
+                <button type="submit">Create specialty record</button>
               </form>
             </section>
           </div>

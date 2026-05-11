@@ -51,6 +51,9 @@ function normalizeState(state) {
     labs: Array.isArray(state.labs)
       ? state.labs
       : clone(clinicCoreSeed.labs || []),
+    specialties: Array.isArray(state.specialties)
+      ? state.specialties
+      : clone(clinicCoreSeed.specialties || []),
     auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents : [],
   };
 }
@@ -730,6 +733,80 @@ export async function updateLab(id, input) {
   );
   await writeClinicState(state);
   return state.labs[index];
+}
+
+export async function createSpecialty(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const specialty = {
+    id: makeId("spec"),
+    patientId: patient.id,
+    visitId: normalizeText(input.visitId) || null,
+    specialtyType: normalizeText(input.specialtyType, "dentistry"),
+    title: normalizeText(input.title, "Specialty record"),
+    startedAt: normalizeText(input.startedAt, nowIso()),
+    status: normalizeText(input.status, "active"),
+    clinician: normalizeText(input.clinician, "Dr. Demo"),
+    findings: normalizeTags(input.findings || input.finding).map((finding) => ({
+      region: normalizeText(input.region, "general"),
+      finding,
+      stage: normalizeText(input.stage),
+    })),
+    tasks: normalizeTags(input.tasks || input.task).map((label) => ({
+      label,
+      dueAt: normalizeText(input.taskDueAt) || null,
+      done: false,
+    })),
+    plan: normalizeTags(input.plan || input.planStep),
+    qualityOfLifeScore:
+      Number(input.qualityOfLifeScore) > 0
+        ? Number(input.qualityOfLifeScore)
+        : null,
+    attachments: normalizeText(input.attachmentLabel)
+      ? [
+          {
+            type: normalizeText(input.attachmentType, "note"),
+            label: normalizeText(input.attachmentLabel),
+          },
+        ]
+      : [],
+    genetics: normalizeText(input.geneticTest)
+      ? [
+          {
+            provider: normalizeText(input.geneticProvider, "external"),
+            test: normalizeText(input.geneticTest),
+            status: normalizeText(input.geneticStatus, "linked"),
+          },
+        ]
+      : [],
+  };
+  state.specialties.push(specialty);
+  appendAudit(
+    state,
+    "created",
+    "specialty",
+    specialty.id,
+    `Created specialty record ${specialty.title}`,
+  );
+  await writeClinicState(state);
+  return specialty;
+}
+
+export async function updateSpecialty(id, input) {
+  const state = await readClinicState();
+  const index = state.specialties.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.specialties[index] = { ...state.specialties[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "specialty",
+    id,
+    `Updated specialty record ${state.specialties[index].title}`,
+  );
+  await writeClinicState(state);
+  return state.specialties[index];
 }
 
 function nextYearDate(dateText) {
