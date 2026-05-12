@@ -29,6 +29,13 @@ import {
 } from "../../../packages/shared/inventory.mjs";
 import { getLabSummary, listLabs } from "../../../packages/shared/labs.mjs";
 import {
+  getMobileSummary,
+  listFieldSessions,
+  listMobileConsults,
+  listMobileDevices,
+  listMobileScans,
+} from "../../../packages/shared/mobile.mjs";
+import {
   getOperationsSummary,
   listAppointments,
   listClientMessages,
@@ -66,6 +73,10 @@ import {
   createLab,
   createAppointment,
   createClientMessage,
+  createFieldSession,
+  createMobileConsult,
+  createMobileDevice,
+  createMobileScan,
   createOwner,
   createPatient,
   createPayment,
@@ -89,6 +100,10 @@ import {
   updateLab,
   updateAppointment,
   updateClientMessage,
+  updateFieldSession,
+  updateMobileConsult,
+  updateMobileDevice,
+  updateMobileScan,
   updateOwner,
   updatePayment,
   updatePortalAccount,
@@ -296,6 +311,14 @@ export function createVetCoreApiServer() {
 
       if (
         request.method === "GET" &&
+        url.pathname === "/clinic/mobile/summary"
+      ) {
+        await sendClinicPayload(response, (state) => getMobileSummary(state));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
         url.pathname === "/clinic/portal-accounts"
       ) {
         await sendClinicPayload(response, (state) => ({
@@ -330,6 +353,43 @@ export function createVetCoreApiServer() {
       ) {
         await sendClinicPayload(response, (state) => ({
           items: listAsyncConsults(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/mobile-devices"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listMobileDevices(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/field-sessions"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listFieldSessions(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/mobile-consults"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listMobileConsults(state),
+        }));
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/clinic/mobile-scans") {
+        await sendClinicPayload(response, (state) => ({
+          items: listMobileScans(state),
         }));
         return;
       }
@@ -594,6 +654,54 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/mobile-devices"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createMobileDevice(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/field-sessions"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createFieldSession(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/mobile-consults"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createMobileConsult(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/mobile-scans"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createMobileScan(await readBody(request)),
+        );
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/clinic/invoices") {
         sendJson(response, 201, await createInvoice(await readBody(request)));
         return;
@@ -853,6 +961,62 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      const mobileDeviceId = matchId(url.pathname, "/clinic/mobile-devices");
+      if (request.method === "PATCH" && mobileDeviceId) {
+        const device = await updateMobileDevice(
+          mobileDeviceId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          device ? 200 : 404,
+          device || { error: "Mobile device not found" },
+        );
+        return;
+      }
+
+      const fieldSessionId = matchId(url.pathname, "/clinic/field-sessions");
+      if (request.method === "PATCH" && fieldSessionId) {
+        const session = await updateFieldSession(
+          fieldSessionId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          session ? 200 : 404,
+          session || { error: "Field session not found" },
+        );
+        return;
+      }
+
+      const mobileConsultId = matchId(url.pathname, "/clinic/mobile-consults");
+      if (request.method === "PATCH" && mobileConsultId) {
+        const consult = await updateMobileConsult(
+          mobileConsultId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          consult ? 200 : 404,
+          consult || { error: "Mobile consult not found" },
+        );
+        return;
+      }
+
+      const mobileScanId = matchId(url.pathname, "/clinic/mobile-scans");
+      if (request.method === "PATCH" && mobileScanId) {
+        const scan = await updateMobileScan(
+          mobileScanId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          scan ? 200 : 404,
+          scan || { error: "Mobile scan not found" },
+        );
+        return;
+      }
+
       const invoiceId = matchId(url.pathname, "/clinic/invoices");
       if (request.method === "PATCH" && invoiceId) {
         const invoice = await updateInvoice(invoiceId, await readBody(request));
@@ -990,6 +1154,11 @@ export function createVetCoreApiServer() {
           "/clinic/portal-documents",
           "/clinic/telemedicine-sessions",
           "/clinic/async-consults",
+          "/clinic/mobile/summary",
+          "/clinic/mobile-devices",
+          "/clinic/field-sessions",
+          "/clinic/mobile-consults",
+          "/clinic/mobile-scans",
           "/clinic/finance/summary",
           "/clinic/invoices",
           "/clinic/payments",

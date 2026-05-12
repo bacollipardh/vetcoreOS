@@ -96,6 +96,18 @@ function normalizeState(state) {
     asyncConsults: Array.isArray(state.asyncConsults)
       ? state.asyncConsults
       : clone(clinicCoreSeed.asyncConsults || []),
+    mobileDevices: Array.isArray(state.mobileDevices)
+      ? state.mobileDevices
+      : clone(clinicCoreSeed.mobileDevices || []),
+    fieldSessions: Array.isArray(state.fieldSessions)
+      ? state.fieldSessions
+      : clone(clinicCoreSeed.fieldSessions || []),
+    mobileConsults: Array.isArray(state.mobileConsults)
+      ? state.mobileConsults
+      : clone(clinicCoreSeed.mobileConsults || []),
+    mobileScans: Array.isArray(state.mobileScans)
+      ? state.mobileScans
+      : clone(clinicCoreSeed.mobileScans || []),
     auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents : [],
   };
 }
@@ -1581,6 +1593,212 @@ export async function updateAsyncConsult(id, input) {
   );
   await writeClinicState(state);
   return state.asyncConsults[index];
+}
+
+export async function createMobileDevice(input) {
+  const state = await readClinicState();
+  const ownerId = normalizeText(input.ownerId);
+  if (ownerId && !state.owners.some((entry) => entry.id === ownerId))
+    throw new Error("valid ownerId is required");
+  const device = {
+    id: makeId("mob"),
+    ownerId,
+    mode: normalizeText(input.mode, "owner"),
+    platform: normalizeText(input.platform, "iPhone"),
+    deviceName: normalizeText(input.deviceName, "Mobile device"),
+    staffName: normalizeText(input.staffName),
+    pushEnabled: Boolean(input.pushEnabled),
+    cameraEnabled:
+      input.cameraEnabled == null ? true : Boolean(input.cameraEnabled),
+    offlineSnapshotReady: Boolean(input.offlineSnapshotReady),
+    biometricEnabled: Boolean(input.biometricEnabled),
+    microchipNfcEnabled: Boolean(input.microchipNfcEnabled),
+    pendingNotifications: Number(input.pendingNotifications || 0),
+    lastSyncAt: normalizeText(input.lastSyncAt, nowIso()),
+  };
+  state.mobileDevices.push(device);
+  appendAudit(
+    state,
+    "created",
+    "mobile-device",
+    device.id,
+    `Created mobile device ${device.deviceName}`,
+  );
+  await writeClinicState(state);
+  return device;
+}
+
+export async function updateMobileDevice(id, input) {
+  const state = await readClinicState();
+  const index = state.mobileDevices.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.mobileDevices[index] = { ...state.mobileDevices[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "mobile-device",
+    id,
+    `Updated mobile device ${state.mobileDevices[index].deviceName}`,
+  );
+  await writeClinicState(state);
+  return state.mobileDevices[index];
+}
+
+export async function createFieldSession(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const visitId = normalizeText(input.visitId);
+  if (visitId && !state.visits.some((entry) => entry.id === visitId))
+    throw new Error("valid visitId is required");
+  const assignedDeviceId = normalizeText(input.assignedDeviceId);
+  if (
+    assignedDeviceId &&
+    !state.mobileDevices.some((entry) => entry.id === assignedDeviceId)
+  )
+    throw new Error("valid assignedDeviceId is required");
+  const session = {
+    id: makeId("fld"),
+    patientId: patient.id,
+    visitId,
+    assignedDeviceId,
+    sessionType: normalizeText(input.sessionType, "field-vet"),
+    location: normalizeText(input.location, "Field visit"),
+    status: normalizeText(input.status, "in-progress"),
+    syncStatus: normalizeText(input.syncStatus, "pending"),
+    scheduleViewReady: Boolean(input.scheduleViewReady),
+    inventoryCheckPending: Boolean(input.inventoryCheckPending),
+    voiceNotesCaptured: Number(input.voiceNotesCaptured || 0),
+    photoCount: Number(input.photoCount || 0),
+    lastActivityAt: normalizeText(input.lastActivityAt, nowIso()),
+  };
+  state.fieldSessions.push(session);
+  appendAudit(
+    state,
+    "created",
+    "field-session",
+    session.id,
+    `Created field session ${session.sessionType}`,
+  );
+  await writeClinicState(state);
+  return session;
+}
+
+export async function updateFieldSession(id, input) {
+  const state = await readClinicState();
+  const index = state.fieldSessions.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.fieldSessions[index] = { ...state.fieldSessions[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "field-session",
+    id,
+    `Updated field session ${state.fieldSessions[index].id}`,
+  );
+  await writeClinicState(state);
+  return state.fieldSessions[index];
+}
+
+export async function createMobileConsult(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const visitId = normalizeText(input.visitId);
+  if (visitId && !state.visits.some((entry) => entry.id === visitId))
+    throw new Error("valid visitId is required");
+  const consult = {
+    id: makeId("mco"),
+    patientId: patient.id,
+    visitId,
+    source: normalizeText(input.source, "field-mode"),
+    status: normalizeText(input.status, "draft"),
+    quickSummary: normalizeText(input.quickSummary, "Mobile consult note"),
+    transcriptionStatus: normalizeText(input.transcriptionStatus, "pending"),
+    photoCount: Number(input.photoCount || 0),
+    inventoryCheckStatus: normalizeText(
+      input.inventoryCheckStatus,
+      "requested",
+    ),
+    microchipScanned: Boolean(input.microchipScanned),
+    scheduleLinked: Boolean(input.scheduleLinked),
+    createdAt: normalizeText(input.createdAt, nowIso()),
+  };
+  state.mobileConsults.push(consult);
+  appendAudit(
+    state,
+    "created",
+    "mobile-consult",
+    consult.id,
+    `Created mobile consult ${consult.id}`,
+  );
+  await writeClinicState(state);
+  return consult;
+}
+
+export async function updateMobileConsult(id, input) {
+  const state = await readClinicState();
+  const index = state.mobileConsults.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.mobileConsults[index] = {
+    ...state.mobileConsults[index],
+    ...input,
+    id,
+  };
+  appendAudit(
+    state,
+    "updated",
+    "mobile-consult",
+    id,
+    `Updated mobile consult ${state.mobileConsults[index].id}`,
+  );
+  await writeClinicState(state);
+  return state.mobileConsults[index];
+}
+
+export async function createMobileScan(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const deviceId = normalizeText(input.deviceId);
+  if (deviceId && !state.mobileDevices.some((entry) => entry.id === deviceId))
+    throw new Error("valid deviceId is required");
+  const scan = {
+    id: makeId("msc"),
+    patientId: patient.id,
+    deviceId,
+    scanType: normalizeText(input.scanType, "microchip-nfc"),
+    source: normalizeText(input.source, "clinic-mobile"),
+    status: normalizeText(input.status, "queued-sync"),
+    lookupResult: normalizeText(input.lookupResult, "Awaiting lookup result"),
+    scannedAt: normalizeText(input.scannedAt, nowIso()),
+  };
+  state.mobileScans.push(scan);
+  appendAudit(
+    state,
+    "created",
+    "mobile-scan",
+    scan.id,
+    `Created mobile scan ${scan.scanType}`,
+  );
+  await writeClinicState(state);
+  return scan;
+}
+
+export async function updateMobileScan(id, input) {
+  const state = await readClinicState();
+  const index = state.mobileScans.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.mobileScans[index] = { ...state.mobileScans[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "mobile-scan",
+    id,
+    `Updated mobile scan ${state.mobileScans[index].id}`,
+  );
+  await writeClinicState(state);
+  return state.mobileScans[index];
 }
 
 function nextYearDate(dateText) {

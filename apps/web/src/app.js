@@ -15,6 +15,7 @@ const viewTitles = {
   inventory: "Pharmacy & Inventory",
   finance: "Finance Hub",
   portal: "Portal & Telemedicine",
+  mobile: "Mobile App Hub",
   audit: "Audit Trail",
   roadmap: "Product Roadmap",
 };
@@ -58,6 +59,11 @@ let latestState = {
   portalDocuments: [],
   telemedicineSessions: [],
   asyncConsults: [],
+  mobileSummary: null,
+  mobileDevices: [],
+  fieldSessions: [],
+  mobileConsults: [],
+  mobileScans: [],
   auditEvents: [],
 };
 
@@ -134,6 +140,10 @@ const modalLabels = {
   portalDocument: "Add portal document",
   telemedicine: "Schedule telemedicine",
   asyncConsult: "Create async consult",
+  mobileDevice: "Register mobile device",
+  fieldSession: "Create field session",
+  mobileConsult: "Create mobile consult",
+  mobileScan: "Log mobile scan",
 };
 function openModalPanel(panel) {
   if (!panel) return;
@@ -232,6 +242,10 @@ const detailCollections = {
   portalDocument: "portalDocuments",
   telemedicine: "telemedicineSessions",
   asyncConsult: "asyncConsults",
+  mobileDevice: "mobileDevices",
+  fieldSession: "fieldSessions",
+  mobileConsult: "mobileConsults",
+  mobileScan: "mobileScans",
   audit: "auditEvents",
 };
 const detailTitles = {
@@ -257,6 +271,10 @@ const detailTitles = {
   portalDocument: "Portal document detail",
   telemedicine: "Telemedicine detail",
   asyncConsult: "Async consult detail",
+  mobileDevice: "Mobile device detail",
+  fieldSession: "Field session detail",
+  mobileConsult: "Mobile consult detail",
+  mobileScan: "Mobile scan detail",
   audit: "Audit event",
 };
 function ensureDetailModal() {
@@ -851,6 +869,85 @@ function recordDetail(type, record) {
       ),
     ].join("");
   }
+  if (type === "mobileDevice") {
+    return [
+      detailSection("Device profile", [
+        ["Mode", record.mode],
+        ["Platform", record.platform],
+        ["Device", record.deviceName],
+        ["Owner", record.owner?.displayName || "-"],
+        ["Staff", record.staffName || "-"],
+        ["Risk", record.riskStatus],
+      ]),
+      detailSection("Mobile readiness", [
+        ["Push", record.pushEnabled ? "enabled" : "disabled"],
+        ["Offline", record.offlineSnapshotReady ? "ready" : "stale"],
+        ["Biometric", record.biometricEnabled ? "enabled" : "disabled"],
+        ["NFC microchip", record.microchipNfcEnabled ? "enabled" : "disabled"],
+        ["Pending notifications", record.pendingNotifications],
+        ["Last sync", record.lastSyncAt],
+      ]),
+    ].join("");
+  }
+  if (type === "fieldSession") {
+    return [
+      detailSection("Field session", [
+        ["Patient", patientName],
+        ["Visit", record.visit?.visitType || "-"],
+        ["Type", record.sessionType],
+        ["Status", record.status],
+        ["Sync", record.syncStatus],
+        ["Risk", record.riskStatus],
+      ]),
+      detailSection("Operational detail", [
+        ["Location", record.location],
+        ["Device", record.device?.deviceName || "-"],
+        ["Inventory check", record.inventoryCheckPending ? "pending" : "clear"],
+        ["Voice notes", record.voiceNotesCaptured],
+        ["Photos", record.photoCount],
+        ["Last activity", record.lastActivityAt],
+      ]),
+    ].join("");
+  }
+  if (type === "mobileConsult") {
+    return [
+      detailSection("Quick consult", [
+        ["Patient", patientName],
+        ["Visit", record.visit?.visitType || "-"],
+        ["Source", record.source],
+        ["Status", record.status],
+        ["Risk", record.riskStatus],
+        ["Created", record.createdAt],
+      ]),
+      detailSection(
+        "Capture quality",
+        [
+          ["Transcription", record.transcriptionStatus],
+          ["Photos", record.photoCount],
+          ["Inventory check", record.inventoryCheckStatus],
+          ["Microchip scanned", record.microchipScanned ? "yes" : "no"],
+          ["Schedule linked", record.scheduleLinked ? "yes" : "no"],
+        ],
+        compactList([record.quickSummary], "No quick consult summary."),
+      ),
+    ].join("");
+  }
+  if (type === "mobileScan") {
+    return [
+      detailSection(
+        "Scan event",
+        [
+          ["Patient", patientName],
+          ["Device", record.device?.deviceName || "-"],
+          ["Type", record.scanType],
+          ["Source", record.source],
+          ["Status", record.status],
+          ["Scanned at", record.scannedAt],
+        ],
+        compactList([record.lookupResult], "No lookup result yet."),
+      ),
+    ].join("");
+  }
   return detailSection(
     "Record",
     Object.entries(record).filter(
@@ -915,6 +1012,18 @@ function telemedicineInputs(record) {
 function asyncConsultInputs(record) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="async-consult-update" data-id="${record.id}"><h3>Async consult</h3><label>Status<select name="status"><option value="awaiting-clinician">awaiting-clinician</option><option value="owner-updated">owner-updated</option><option value="closed">closed</option></select></label><label>Photo count<input name="photoCount" type="number" min="0" value="${record.photoCount || 0}" /></label><label class="checkbox-line"><input name="medicationReminderEnabled" type="checkbox" value="true" ${record.medicationReminderEnabled ? "checked" : ""} /> Medication reminders</label><label>Triage<textarea name="triageRecommendation">${record.triageRecommendation || ""}</textarea></label><button type="submit">Save async consult</button></form></div>`;
 }
+function mobileDeviceInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="mobile-device-update" data-id="${record.id}"><h3>Mobile device</h3><label>Mode<select name="mode"><option value="owner">owner</option><option value="field-staff">field-staff</option><option value="clinic-staff">clinic-staff</option></select></label><label>Pending notifications<input name="pendingNotifications" type="number" min="0" value="${record.pendingNotifications || 0}" /></label><label class="checkbox-line"><input name="pushEnabled" type="checkbox" value="true" ${record.pushEnabled ? "checked" : ""} /> Push enabled</label><label class="checkbox-line"><input name="offlineSnapshotReady" type="checkbox" value="true" ${record.offlineSnapshotReady ? "checked" : ""} /> Offline ready</label><label class="checkbox-line"><input name="biometricEnabled" type="checkbox" value="true" ${record.biometricEnabled ? "checked" : ""} /> Biometric auth</label><label class="checkbox-line"><input name="microchipNfcEnabled" type="checkbox" value="true" ${record.microchipNfcEnabled ? "checked" : ""} /> NFC lookup</label><button type="submit">Save mobile device</button></form></div>`;
+}
+function fieldSessionInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="field-session-update" data-id="${record.id}"><h3>Field session</h3><label>Status<select name="status"><option value="scheduled">scheduled</option><option value="in-progress">in-progress</option><option value="synced">synced</option><option value="completed">completed</option></select></label><label>Sync<select name="syncStatus"><option value="pending">pending</option><option value="queued">queued</option><option value="synced">synced</option></select></label><label>Photos<input name="photoCount" type="number" min="0" value="${record.photoCount || 0}" /></label><label class="checkbox-line"><input name="inventoryCheckPending" type="checkbox" value="true" ${record.inventoryCheckPending ? "checked" : ""} /> Inventory check pending</label><label>Location<textarea name="location">${record.location || ""}</textarea></label><button type="submit">Save field session</button></form></div>`;
+}
+function mobileConsultInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="mobile-consult-update" data-id="${record.id}"><h3>Mobile consult</h3><label>Status<select name="status"><option value="draft">draft</option><option value="ready">ready</option><option value="synced">synced</option></select></label><label>Transcription<select name="transcriptionStatus"><option value="pending">pending</option><option value="processing">processing</option><option value="complete">complete</option></select></label><label>Inventory check<select name="inventoryCheckStatus"><option value="requested">requested</option><option value="complete">complete</option><option value="not-needed">not-needed</option></select></label><label class="checkbox-line"><input name="microchipScanned" type="checkbox" value="true" ${record.microchipScanned ? "checked" : ""} /> Microchip scanned</label><label>Summary<textarea name="quickSummary">${record.quickSummary || ""}</textarea></label><button type="submit">Save mobile consult</button></form></div>`;
+}
+function mobileScanInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="mobile-scan-update" data-id="${record.id}"><h3>Mobile scan</h3><label>Status<select name="status"><option value="queued-sync">queued-sync</option><option value="manual-review">manual-review</option><option value="matched">matched</option></select></label><label>Lookup result<textarea name="lookupResult">${record.lookupResult || ""}</textarea></label><button type="submit">Save mobile scan</button></form></div>`;
+}
 function visitInputs(visit) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="visit-soap" data-id="${visit.id}"><h3>Clinical input</h3><label>Anamnesis<textarea name="anamnesis">${visit.anamnesis || ""}</textarea></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" value="${visit.physicalExam?.temperatureC || ""}" /></label><label>Pulse bpm<input name="pulseBpm" type="number" value="${visit.physicalExam?.pulseBpm || ""}" /></label><label>Respiration rpm<input name="respirationRpm" type="number" value="${visit.physicalExam?.respirationRpm || ""}" /></label><label>Diagnosis<input name="diagnosis" value="${visit.diagnoses?.[0]?.label || ""}" /></label><label>Treatment plan<input name="treatmentPlan" value="${(visit.treatmentPlan || []).join(", ")}" /></label><button type="submit">Save visit info</button></form><form class="form-card" data-detail-form="visit-procedure" data-id="${visit.id}"><h3>Add procedure</h3><label>Procedure<input name="procedureName" required /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" /></label><button type="submit">Add procedure</button></form></div>`;
 }
@@ -948,6 +1057,10 @@ function openRecordDetail(type, id) {
     portalDocument: portalDocumentInputs,
     telemedicine: telemedicineInputs,
     asyncConsult: asyncConsultInputs,
+    mobileDevice: mobileDeviceInputs,
+    fieldSession: fieldSessionInputs,
+    mobileConsult: mobileConsultInputs,
+    mobileScan: mobileScanInputs,
     visit: visitInputs,
     surgery: surgeryInputs,
   };
@@ -1031,6 +1144,26 @@ function openRecordDetail(type, id) {
   if (type === "asyncConsult") {
     panel.querySelector('[name="status"]').value =
       record.status || "awaiting-clinician";
+  }
+  if (type === "mobileDevice") {
+    panel.querySelector('[name="mode"]').value = record.mode || "owner";
+  }
+  if (type === "fieldSession") {
+    panel.querySelector('[name="status"]').value =
+      record.status || "in-progress";
+    panel.querySelector('[name="syncStatus"]').value =
+      record.syncStatus || "pending";
+  }
+  if (type === "mobileConsult") {
+    panel.querySelector('[name="status"]').value = record.status || "draft";
+    panel.querySelector('[name="transcriptionStatus"]').value =
+      record.transcriptionStatus || "pending";
+    panel.querySelector('[name="inventoryCheckStatus"]').value =
+      record.inventoryCheckStatus || "requested";
+  }
+  if (type === "mobileScan") {
+    panel.querySelector('[name="status"]').value =
+      record.status || "queued-sync";
   }
   openModalPanel(panel);
 }
@@ -1317,6 +1450,38 @@ function asyncConsultRow(record) {
       : `<button class="text-button" type="button" data-close-async-consult-id="${record.id}">Close</button>`;
   return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · Async consult</h3><p class="record-meta">${record.owner?.displayName || "Owner"} · due ${record.responseDueHours}h</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${closeAction}<button class="text-button" type="button" data-detail-type="asyncConsult" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">${record.symptomSummary}</p><div class="badges"><span class="badge">${record.photoCount} photos</span><span class="badge">${record.medicationReminderEnabled ? "reminders on" : "reminders off"}</span></div></article>`;
 }
+function mobileDeviceRow(record) {
+  const statusClass = record.riskStatus === "active" ? "ok" : "alert";
+  const syncAction =
+    record.riskStatus === "active"
+      ? ""
+      : `<button class="text-button" type="button" data-sync-device-id="${record.id}">Sync</button>`;
+  return `<article class="record-row"><header><div><h3>${record.deviceName}</h3><p class="record-meta">${record.platform} · ${record.mode} · ${record.owner?.displayName || record.staffName || "Unassigned"}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${syncAction}<button class="text-button" type="button" data-detail-type="mobileDevice" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Push ${record.pushEnabled ? "on" : "off"} · Offline ${record.offlineSnapshotReady ? "ready" : "stale"} · Last sync ${new Date(record.lastSyncAt).toLocaleString()}</p><div class="badges"><span class="badge">${record.microchipNfcEnabled ? "NFC" : "manual scan"}</span><span class="badge">${record.pendingNotifications} pending</span></div></article>`;
+}
+function fieldSessionRow(record) {
+  const statusClass = record.riskStatus === "stable" ? "ok" : "alert";
+  const syncAction =
+    record.syncStatus === "synced"
+      ? ""
+      : `<button class="text-button" type="button" data-sync-field-id="${record.id}">Sync</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.sessionType}</h3><p class="record-meta">${record.location} · ${record.device?.deviceName || "No device"} · ${record.status}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${syncAction}<button class="text-button" type="button" data-detail-type="fieldSession" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Sync ${record.syncStatus} · Photos ${record.photoCount} · Voice ${record.voiceNotesCaptured}</p><div class="badges"><span class="badge">${record.inventoryCheckPending ? "inventory check" : "inventory clear"}</span></div></article>`;
+}
+function mobileConsultRow(record) {
+  const statusClass = record.riskStatus === "synced" ? "ok" : "alert";
+  const finalizeAction =
+    record.status === "synced"
+      ? ""
+      : `<button class="text-button" type="button" data-finalize-mobile-consult-id="${record.id}">Finalize</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · Quick consult</h3><p class="record-meta">${record.source} · ${record.status} · ${new Date(record.createdAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${finalizeAction}<button class="text-button" type="button" data-detail-type="mobileConsult" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">${record.quickSummary}</p><div class="badges"><span class="badge">${record.transcriptionStatus}</span><span class="badge">${record.photoCount} photos</span></div></article>`;
+}
+function mobileScanRow(record) {
+  const statusClass = record.riskStatus === "matched" ? "ok" : "alert";
+  const resolveAction =
+    record.status === "matched"
+      ? ""
+      : `<button class="text-button" type="button" data-resolve-mobile-scan-id="${record.id}">Resolve</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.scanType}</h3><p class="record-meta">${record.source} · ${record.device?.deviceName || "No device"} · ${new Date(record.scannedAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${resolveAction}<button class="text-button" type="button" data-detail-type="mobileScan" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">${record.lookupResult}</p><div class="badges"><span class="badge">${record.status}</span></div></article>`;
+}
 function auditRow(event) {
   return `<article class="record-row"><header><div><h3>${event.summary}</h3><p class="record-meta">${new Date(event.at).toLocaleString()} · ${event.actor}</p></div><div class="visit-actions"><span class="badge">${event.action}</span><span class="badge">${event.entityType}</span></div></header><p class="record-meta">Record: ${event.entityId}</p></article>`;
 }
@@ -1454,6 +1619,27 @@ function patientTimeline(patient, visits) {
         `<article class="timeline-item"><span>${record.status}</span><strong>Async consult</strong><p>${record.symptomSummary}</p><small>F254-F260 async consults</small></article>`,
     )
     .join("");
+  const fieldSessionItems = latestState.fieldSessions
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.lastActivityAt).toLocaleDateString()}</span><strong>${record.sessionType}</strong><p>${record.syncStatus} · ${record.location}</p><small>F267-F271 field mobile workflow</small></article>`,
+    )
+    .join("");
+  const mobileConsultItems = latestState.mobileConsults
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.createdAt).toLocaleDateString()}</span><strong>Mobile consult</strong><p>${record.status} · ${record.transcriptionStatus}</p><small>F269-F273 mobile consult capture</small></article>`,
+    )
+    .join("");
+  const mobileScanItems = latestState.mobileScans
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.scannedAt).toLocaleDateString()}</span><strong>${record.scanType}</strong><p>${record.status} · ${record.source}</p><small>F266-F274 mobile scan utility</small></article>`,
+    )
+    .join("");
   const weightItems =
     patient.weightHistory
       ?.map(
@@ -1479,8 +1665,11 @@ function patientTimeline(patient, visits) {
     portalDocumentItems ||
     telemedicineItems ||
     asyncConsultItems ||
+    fieldSessionItems ||
+    mobileConsultItems ||
+    mobileScanItems ||
     weightItems
-    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${controlledItems}${invoiceItems}${paymentItems}${claimItems}${planItems}${portalDocumentItems}${telemedicineItems}${asyncConsultItems}${weightItems}`
+    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${controlledItems}${invoiceItems}${paymentItems}${claimItems}${planItems}${portalDocumentItems}${telemedicineItems}${asyncConsultItems}${fieldSessionItems}${mobileConsultItems}${mobileScanItems}${weightItems}`
     : '<p class="muted">No clinical timeline yet.</p>';
 }
 function patientInputs(patient) {
@@ -1699,7 +1888,7 @@ function splitTags(value) {
 function bindWorkflowActions() {
   document.addEventListener("click", async (event) => {
     const button = event.target.closest(
-      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id], [data-dispense-inventory-id], [data-receive-inventory-id], [data-approve-po-id], [data-receive-po-id], [data-match-po-id], [data-approve-invoice-id], [data-issue-invoice-id], [data-capture-payment-id], [data-submit-claim-id], [data-approve-claim-id], [data-activate-plan-id], [data-pause-plan-id], [data-accept-portal-id], [data-share-portal-doc-id], [data-confirm-telemedicine-id], [data-close-async-consult-id]",
+      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id], [data-dispense-inventory-id], [data-receive-inventory-id], [data-approve-po-id], [data-receive-po-id], [data-match-po-id], [data-approve-invoice-id], [data-issue-invoice-id], [data-capture-payment-id], [data-submit-claim-id], [data-approve-claim-id], [data-activate-plan-id], [data-pause-plan-id], [data-accept-portal-id], [data-share-portal-doc-id], [data-confirm-telemedicine-id], [data-close-async-consult-id], [data-sync-device-id], [data-sync-field-id], [data-finalize-mobile-consult-id], [data-resolve-mobile-scan-id]",
     );
     if (!button) return;
     try {
@@ -2221,6 +2410,72 @@ function bindWorkflowActions() {
         );
         setStatus("Async consult closed.");
       }
+      if (button.dataset.syncDeviceId) {
+        await fetchJson(
+          `/clinic/mobile-devices/${button.dataset.syncDeviceId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              pushEnabled: true,
+              offlineSnapshotReady: true,
+              pendingNotifications: 0,
+              lastSyncAt: new Date().toISOString(),
+            }),
+          },
+        );
+        setStatus("Mobile device synced.");
+      }
+      if (button.dataset.syncFieldId) {
+        const record = latestState.fieldSessions.find(
+          (entry) => entry.id === button.dataset.syncFieldId,
+        );
+        await fetchJson(
+          `/clinic/field-sessions/${button.dataset.syncFieldId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              syncStatus: "synced",
+              status: "synced",
+              inventoryCheckPending: false,
+              lastActivityAt: new Date().toISOString(),
+            }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Field session synced.");
+      }
+      if (button.dataset.finalizeMobileConsultId) {
+        const record = latestState.mobileConsults.find(
+          (entry) => entry.id === button.dataset.finalizeMobileConsultId,
+        );
+        await fetchJson(
+          `/clinic/mobile-consults/${button.dataset.finalizeMobileConsultId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              status: "synced",
+              transcriptionStatus: "complete",
+              inventoryCheckStatus: "complete",
+            }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Mobile consult finalized.");
+      }
+      if (button.dataset.resolveMobileScanId) {
+        const record = latestState.mobileScans.find(
+          (entry) => entry.id === button.dataset.resolveMobileScanId,
+        );
+        await fetchJson(
+          `/clinic/mobile-scans/${button.dataset.resolveMobileScanId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "matched" }),
+          },
+        );
+        selectedPatientId = record?.patientId || selectedPatientId;
+        setStatus("Mobile scan resolved.");
+      }
       await render();
     } catch (error) {
       setStatus(error.message, "error");
@@ -2292,6 +2547,21 @@ async function submitForm(form) {
   if (type === "asyncConsult") {
     data.medicationReminderEnabled = data.medicationReminderEnabled === "true";
   }
+  if (type === "mobileDevice") {
+    data.pushEnabled = data.pushEnabled === "true";
+    data.cameraEnabled = data.cameraEnabled === "true";
+    data.offlineSnapshotReady = data.offlineSnapshotReady === "true";
+    data.biometricEnabled = data.biometricEnabled === "true";
+    data.microchipNfcEnabled = data.microchipNfcEnabled === "true";
+  }
+  if (type === "fieldSession") {
+    data.scheduleViewReady = data.scheduleViewReady === "true";
+    data.inventoryCheckPending = data.inventoryCheckPending === "true";
+  }
+  if (type === "mobileConsult") {
+    data.microchipScanned = data.microchipScanned === "true";
+    data.scheduleLinked = data.scheduleLinked === "true";
+  }
   const endpoints = {
     owner: "/clinic/owners",
     patient: "/clinic/patients",
@@ -2315,6 +2585,10 @@ async function submitForm(form) {
     portalDocument: "/clinic/portal-documents",
     telemedicine: "/clinic/telemedicine-sessions",
     asyncConsult: "/clinic/async-consults",
+    mobileDevice: "/clinic/mobile-devices",
+    fieldSession: "/clinic/field-sessions",
+    mobileConsult: "/clinic/mobile-consults",
+    mobileScan: "/clinic/mobile-scans",
   };
   const created = await fetchJson(endpoints[type], {
     method: "POST",
@@ -2337,7 +2611,10 @@ async function submitForm(form) {
     type === "wellnessPlan" ||
     type === "portalDocument" ||
     type === "telemedicine" ||
-    type === "asyncConsult"
+    type === "asyncConsult" ||
+    type === "fieldSession" ||
+    type === "mobileConsult" ||
+    type === "mobileScan"
   )
     selectedPatientId = created.patientId;
   form.reset();
@@ -2368,6 +2645,13 @@ async function submitForm(form) {
     type === "asyncConsult"
   )
     switchView("portal");
+  if (
+    type === "mobileDevice" ||
+    type === "fieldSession" ||
+    type === "mobileConsult" ||
+    type === "mobileScan"
+  )
+    switchView("mobile");
 }
 function bindForms() {
   document.querySelectorAll("form[data-form]").forEach((form) =>
@@ -2994,6 +3278,58 @@ function bindDetailForms() {
         });
         setStatus("Async consult saved.");
       }
+      if (form.dataset.detailForm === "mobile-device-update") {
+        await fetchJson(`/clinic/mobile-devices/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            mode: data.mode,
+            pendingNotifications: Number(data.pendingNotifications || 0),
+            pushEnabled: data.pushEnabled === "true",
+            offlineSnapshotReady: data.offlineSnapshotReady === "true",
+            biometricEnabled: data.biometricEnabled === "true",
+            microchipNfcEnabled: data.microchipNfcEnabled === "true",
+            lastSyncAt: new Date().toISOString(),
+          }),
+        });
+        setStatus("Mobile device saved.");
+      }
+      if (form.dataset.detailForm === "field-session-update") {
+        await fetchJson(`/clinic/field-sessions/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            syncStatus: data.syncStatus,
+            photoCount: Number(data.photoCount || 0),
+            inventoryCheckPending: data.inventoryCheckPending === "true",
+            location: data.location,
+            lastActivityAt: new Date().toISOString(),
+          }),
+        });
+        setStatus("Field session saved.");
+      }
+      if (form.dataset.detailForm === "mobile-consult-update") {
+        await fetchJson(`/clinic/mobile-consults/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            transcriptionStatus: data.transcriptionStatus,
+            inventoryCheckStatus: data.inventoryCheckStatus,
+            microchipScanned: data.microchipScanned === "true",
+            quickSummary: data.quickSummary,
+          }),
+        });
+        setStatus("Mobile consult saved.");
+      }
+      if (form.dataset.detailForm === "mobile-scan-update") {
+        await fetchJson(`/clinic/mobile-scans/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            lookupResult: data.lookupResult,
+          }),
+        });
+        setStatus("Mobile scan saved.");
+      }
       await render();
       const detailMap = {
         "owner-profile": "owner",
@@ -3025,6 +3361,10 @@ function bindDetailForms() {
         "portal-document-update": "portalDocument",
         "telemedicine-update": "telemedicine",
         "async-consult-update": "asyncConsult",
+        "mobile-device-update": "mobileDevice",
+        "field-session-update": "fieldSession",
+        "mobile-consult-update": "mobileConsult",
+        "mobile-scan-update": "mobileScan",
         "visit-soap": "visit",
         "visit-procedure": "visit",
         "surgery-update": "surgery",
@@ -3374,6 +3714,47 @@ function renderPortal() {
   document.querySelector("#async-consult-list").innerHTML =
     `${recordCount(asyncConsults)}${asyncConsults.map(asyncConsultRow).join("") || '<p class="muted">No async consults match the current search.</p>'}`;
 }
+function renderMobile() {
+  const summary = latestState.mobileSummary;
+  if (!summary) return;
+  const devices = filtered(latestState.mobileDevices);
+  const fieldSessions = filtered(latestState.fieldSessions);
+  const consults = filtered(latestState.mobileConsults);
+  const scans = filtered(latestState.mobileScans);
+  const alerts = filtered(summary.alerts);
+  document.querySelector("#mobile-metrics").innerHTML = [
+    metric("Devices", summary.counts.devices),
+    metric("Field sessions", summary.counts.fieldSessions),
+    metric("Consults", summary.counts.consults),
+    metric("Scans", summary.counts.scans),
+  ].join("");
+  document.querySelector("#mobile-coverage").innerHTML = summary.featureCoverage
+    .map(
+      (coverage) =>
+        `<article class="card"><div class="badges"><span class="badge">${coverage.range}</span></div><h3>${coverage.area}</h3><p>${coverage.description}</p></article>`,
+    )
+    .join("");
+  document.querySelector("#mobile-alerts").innerHTML =
+    alerts
+      .map((record) =>
+        record.deviceName
+          ? mobileDeviceRow(record)
+          : record.sessionType
+            ? fieldSessionRow(record)
+            : record.scanType
+              ? mobileScanRow(record)
+              : mobileConsultRow(record),
+      )
+      .join("") || '<p class="muted">No mobile alerts.</p>';
+  document.querySelector("#mobile-device-list").innerHTML =
+    `${recordCount(devices)}${devices.map(mobileDeviceRow).join("") || '<p class="muted">No mobile devices match the current search.</p>'}`;
+  document.querySelector("#field-session-list").innerHTML =
+    `${recordCount(fieldSessions)}${fieldSessions.map(fieldSessionRow).join("") || '<p class="muted">No field sessions match the current search.</p>'}`;
+  document.querySelector("#mobile-consult-list").innerHTML =
+    `${recordCount(consults)}${consults.map(mobileConsultRow).join("") || '<p class="muted">No mobile consults match the current search.</p>'}`;
+  document.querySelector("#mobile-scan-list").innerHTML =
+    `${recordCount(scans)}${scans.map(mobileScanRow).join("") || '<p class="muted">No mobile scans match the current search.</p>'}`;
+}
 function renderAudit() {
   const events = filtered(latestState.auditEvents);
   document.querySelector("#audit-list").innerHTML =
@@ -3492,6 +3873,15 @@ function renderWorkQueue() {
         latestState.portalSummary.alerts.length,
       ),
     );
+  if (latestState.mobileSummary?.alerts.length)
+    items.push(
+      queueItem(
+        "mobile",
+        "Mobile field sync",
+        "Clear offline risk, finalize quick consults and resolve scan events.",
+        latestState.mobileSummary.alerts.length,
+      ),
+    );
   const count = items.length;
   document.querySelector("#queue-count").textContent = `${count} open`;
   document.querySelector("#work-queue").innerHTML =
@@ -3531,6 +3921,11 @@ async function render() {
     portalDocuments,
     telemedicineSessions,
     asyncConsults,
+    mobileSummary,
+    mobileDevices,
+    fieldSessions,
+    mobileConsults,
+    mobileScans,
     operationsSummary,
     appointments,
     clientMessages,
@@ -3566,6 +3961,11 @@ async function render() {
     fetchJson("/clinic/portal-documents"),
     fetchJson("/clinic/telemedicine-sessions"),
     fetchJson("/clinic/async-consults"),
+    fetchJson("/clinic/mobile/summary"),
+    fetchJson("/clinic/mobile-devices"),
+    fetchJson("/clinic/field-sessions"),
+    fetchJson("/clinic/mobile-consults"),
+    fetchJson("/clinic/mobile-scans"),
     fetchJson("/clinic/inventory/summary"),
     fetchJson("/clinic/inventory-items"),
     fetchJson("/clinic/purchase-orders"),
@@ -3610,6 +4010,11 @@ async function render() {
     portalDocuments: portalDocuments.items,
     telemedicineSessions: telemedicineSessions.items,
     asyncConsults: asyncConsults.items,
+    mobileSummary,
+    mobileDevices: mobileDevices.items,
+    fieldSessions: fieldSessions.items,
+    mobileConsults: mobileConsults.items,
+    mobileScans: mobileScans.items,
     operationsSummary,
     appointments: appointments.items,
     clientMessages: clientMessages.items,
@@ -3717,6 +4122,36 @@ async function render() {
     latestState.owners,
     "displayName",
   );
+  fillSelect(
+    document.querySelector("#mobile-device-owner-options"),
+    latestState.owners,
+    "displayName",
+  );
+  fillSelect(
+    document.querySelector("#field-session-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#mobile-consult-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#mobile-scan-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#field-session-device-options"),
+    latestState.mobileDevices,
+    "deviceName",
+  );
+  fillSelect(
+    document.querySelector("#mobile-scan-device-options"),
+    latestState.mobileDevices,
+    "deviceName",
+  );
   fillVisitSelect(document.querySelector("#visit-options"), latestState.visits);
   fillVisitSelect(
     document.querySelector("#prescription-visit-options"),
@@ -3755,6 +4190,14 @@ async function render() {
     latestState.visits,
   );
   fillVisitSelect(
+    document.querySelector("#field-session-visit-options"),
+    latestState.visits,
+  );
+  fillVisitSelect(
+    document.querySelector("#mobile-consult-visit-options"),
+    latestState.visits,
+  );
+  fillVisitSelect(
     document.querySelector("#appointment-visit-options"),
     latestState.visits,
   );
@@ -3781,6 +4224,7 @@ async function render() {
     metric("Inventory alerts", inventorySummary.alerts.length),
     metric("Finance alerts", financeSummary.alerts.length),
     metric("Portal alerts", portalSummary.alerts.length),
+    metric("Mobile alerts", mobileSummary.alerts.length),
     metric("Operations alerts", operationsSummary.alerts.length),
     metric("Specialty alerts", specialtySummary.alerts.length),
     metric("Audit events", auditEvents.items.length),
@@ -3803,6 +4247,7 @@ async function render() {
   renderInventory();
   renderFinance();
   renderPortal();
+  renderMobile();
   renderOperations();
   renderSpecialties();
   renderAudit();

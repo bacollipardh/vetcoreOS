@@ -26,6 +26,10 @@ import {
 } from "../packages/shared/inventory.mjs";
 import { getLabSummary, labFeatureCoverage } from "../packages/shared/labs.mjs";
 import {
+  getMobileSummary,
+  mobileFeatureCoverage,
+} from "../packages/shared/mobile.mjs";
+import {
   getOperationsSummary,
   operationsFeatureCoverage,
 } from "../packages/shared/operations.mjs";
@@ -150,6 +154,12 @@ for (const range of ["F237-F245", "F246-F255", "F256-F261"]) {
   }
 }
 
+for (const range of ["F262-F266", "F267-F271", "F272-F274"]) {
+  if (!mobileFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P4 mobile coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
 const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
 const prescriptionSummary = getPrescriptionSummary(clinicCoreSeed);
@@ -162,6 +172,7 @@ const operationsSummary = getOperationsSummary(clinicCoreSeed);
 const inventorySummary = getInventorySummary(clinicCoreSeed);
 const financeSummary = getFinanceSummary(clinicCoreSeed);
 const portalSummary = getPortalSummary(clinicCoreSeed);
+const mobileSummary = getMobileSummary(clinicCoreSeed);
 if (
   summary.counts.patients < 2 ||
   summary.counts.owners < 2 ||
@@ -176,7 +187,8 @@ if (
   operationsSummary.counts.appointments < 3 ||
   inventorySummary.counts.items < 3 ||
   financeSummary.counts.invoices < 2 ||
-  portalSummary.counts.accounts < 2
+  portalSummary.counts.accounts < 2 ||
+  mobileSummary.counts.devices < 2
 ) {
   throw new Error("Clinic core seed data is incomplete");
 }
@@ -244,4 +256,7 @@ console.log(
 );
 console.log(
   `Verified P4 portal seed with ${portalSummary.counts.accounts} accounts, ${portalSummary.counts.telemedicine} telemedicine sessions and ${portalSummary.alerts.length} alerts.`,
+);
+console.log(
+  `Verified P4 mobile seed with ${mobileSummary.counts.devices} devices, ${mobileSummary.counts.fieldSessions} field sessions and ${mobileSummary.alerts.length} alerts.`,
 );

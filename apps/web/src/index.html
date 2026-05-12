@@ -40,13 +40,14 @@
           <button class="nav-item" data-view="inventory">Inventory</button>
           <button class="nav-item" data-view="finance">Finance</button>
           <button class="nav-item" data-view="portal">Portal</button>
+          <button class="nav-item" data-view="mobile">Mobile</button>
           <span class="nav-group">Controls</span>
           <button class="nav-item" data-view="audit">Audit</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
         <div class="sidebar-note">
           <span>P4</span>
-          <p>Coverage: F001-F261</p>
+          <p>Coverage: F001-F274</p>
         </div>
       </aside>
       <main class="workspace">
@@ -2099,6 +2100,312 @@
                     ></textarea>
                   </label>
                   <button type="submit">Create async consult</button>
+                </form>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section class="view" data-panel="mobile">
+          <div class="metrics compact-metrics" id="mobile-metrics"></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F262-F274</p>
+                  <h2>Owner and staff mobile workflows</h2>
+                </div>
+              </div>
+              <div class="grid three" id="mobile-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Mobile alerts</h2>
+                <div id="mobile-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Devices</h2>
+                <div id="mobile-device-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Field sessions</h2>
+                <div id="field-session-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Quick consults</h2>
+                <div id="mobile-consult-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Scan log</h2>
+                <div id="mobile-scan-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Register mobile device</h2></div>
+              <form class="form-card" data-form="mobileDevice">
+                <label
+                  >Owner<select
+                    name="ownerId"
+                    id="mobile-device-owner-options"
+                  ></select
+                ></label>
+                <label
+                  >Mode<select name="mode">
+                    <option value="owner">Owner</option>
+                    <option value="field-staff">Field staff</option>
+                    <option value="clinic-staff">Clinic staff</option>
+                  </select></label
+                >
+                <label
+                  >Platform<select name="platform">
+                    <option value="iPhone">iPhone</option>
+                    <option value="Android">Android</option>
+                    <option value="iPad">iPad</option>
+                  </select></label
+                >
+                <label
+                  >Device name<input
+                    name="deviceName"
+                    placeholder="Clinic iPad 01"
+                    required
+                /></label>
+                <label
+                  >Staff name<input
+                    name="staffName"
+                    placeholder="Optional for staff mode"
+                /></label>
+                <label class="checkbox-line"
+                  ><input name="pushEnabled" type="checkbox" value="true" />
+                  Push enabled</label
+                >
+                <label class="checkbox-line"
+                  ><input name="cameraEnabled" type="checkbox" value="true" />
+                  Camera enabled</label
+                >
+                <label class="checkbox-line"
+                  ><input
+                    name="offlineSnapshotReady"
+                    type="checkbox"
+                    value="true"
+                  />
+                  Offline ready</label
+                >
+                <label class="checkbox-line"
+                  ><input
+                    name="biometricEnabled"
+                    type="checkbox"
+                    value="true"
+                  />
+                  Biometric auth</label
+                >
+                <label class="checkbox-line"
+                  ><input
+                    name="microchipNfcEnabled"
+                    type="checkbox"
+                    value="true"
+                  />
+                  NFC microchip</label
+                >
+                <button type="submit">Create mobile device</button>
+              </form>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Create field session</h2></div>
+                <form class="form-card" data-form="fieldSession">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="field-session-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Visit<select
+                      name="visitId"
+                      id="field-session-visit-options"
+                    ></select
+                  ></label>
+                  <label
+                    >Device<select
+                      name="assignedDeviceId"
+                      id="field-session-device-options"
+                    ></select
+                  ></label>
+                  <label
+                    >Type<select name="sessionType">
+                      <option value="field-vet">Field vet</option>
+                      <option value="travel-docs">Travel docs</option>
+                      <option value="farm-round">Farm round</option>
+                    </select></label
+                  >
+                  <label
+                    >Location<input
+                      name="location"
+                      placeholder="Farm, kennel, owner site"
+                      required
+                  /></label>
+                  <label
+                    >Status<select name="status">
+                      <option value="in-progress">In progress</option>
+                      <option value="scheduled">Scheduled</option>
+                      <option value="synced">Synced</option>
+                    </select></label
+                  >
+                  <label
+                    >Sync<select name="syncStatus">
+                      <option value="pending">Pending</option>
+                      <option value="queued">Queued</option>
+                      <option value="synced">Synced</option>
+                    </select></label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="scheduleViewReady"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Schedule linked</label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="inventoryCheckPending"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Inventory check pending</label
+                  >
+                  <label
+                    >Voice notes<input
+                      name="voiceNotesCaptured"
+                      type="number"
+                      min="0"
+                      value="0"
+                  /></label>
+                  <label
+                    >Photos<input
+                      name="photoCount"
+                      type="number"
+                      min="0"
+                      value="0"
+                  /></label>
+                  <button type="submit">Create field session</button>
+                </form>
+              </div>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Create mobile consult</h2></div>
+                <form class="form-card" data-form="mobileConsult">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="mobile-consult-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Visit<select
+                      name="visitId"
+                      id="mobile-consult-visit-options"
+                    ></select
+                  ></label>
+                  <label
+                    >Source<select name="source">
+                      <option value="field-mode">Field mode</option>
+                      <option value="owner-mobile">Owner mobile</option>
+                      <option value="clinic-mobile">Clinic mobile</option>
+                    </select></label
+                  >
+                  <label
+                    >Status<select name="status">
+                      <option value="draft">Draft</option>
+                      <option value="ready">Ready</option>
+                      <option value="synced">Synced</option>
+                    </select></label
+                  >
+                  <label
+                    >Summary<textarea
+                      name="quickSummary"
+                      placeholder="Quick consult note"
+                    ></textarea>
+                  </label>
+                  <label
+                    >Transcription<select name="transcriptionStatus">
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="complete">Complete</option>
+                    </select></label
+                  >
+                  <label
+                    >Photos<input
+                      name="photoCount"
+                      type="number"
+                      min="0"
+                      value="0"
+                  /></label>
+                  <label
+                    >Inventory check<select name="inventoryCheckStatus">
+                      <option value="requested">Requested</option>
+                      <option value="complete">Complete</option>
+                      <option value="not-needed">Not needed</option>
+                    </select></label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="microchipScanned"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Microchip scanned</label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="scheduleLinked"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Schedule linked</label
+                  >
+                  <button type="submit">Create mobile consult</button>
+                </form>
+              </div>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Log mobile scan</h2></div>
+                <form class="form-card" data-form="mobileScan">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="mobile-scan-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Device<select
+                      name="deviceId"
+                      id="mobile-scan-device-options"
+                    ></select
+                  ></label>
+                  <label
+                    >Type<select name="scanType">
+                      <option value="microchip-nfc">Microchip NFC</option>
+                      <option value="camera-lookup">Camera lookup</option>
+                    </select></label
+                  >
+                  <label
+                    >Source<select name="source">
+                      <option value="clinic-mobile">Clinic mobile</option>
+                      <option value="field-mode">Field mode</option>
+                      <option value="owner-mobile">Owner mobile</option>
+                    </select></label
+                  >
+                  <label
+                    >Status<select name="status">
+                      <option value="queued-sync">Queued sync</option>
+                      <option value="manual-review">Manual review</option>
+                      <option value="matched">Matched</option>
+                    </select></label
+                  >
+                  <label
+                    >Lookup result<textarea
+                      name="lookupResult"
+                      placeholder="Registry or device lookup note"
+                    ></textarea>
+                  </label>
+                  <button type="submit">Create scan event</button>
                 </form>
               </div>
             </section>

@@ -476,6 +476,69 @@ if (
 )
   throw new Error("Portal summary failed");
 
+const mobileDevice = await request("/clinic/mobile-devices", {
+  method: "POST",
+  body: JSON.stringify({
+    ownerId: owner.id,
+    mode: "owner",
+    platform: "iPhone",
+    deviceName: "Smoke mobile",
+    pushEnabled: true,
+    cameraEnabled: true,
+  }),
+});
+if (!mobileDevice.id || mobileDevice.deviceName !== "Smoke mobile")
+  throw new Error("Mobile device create failed");
+
+const fieldSession = await request("/clinic/field-sessions", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    visitId: visit.id,
+    assignedDeviceId: mobileDevice.id,
+    sessionType: "field-vet",
+    location: "Smoke field round",
+    status: "in-progress",
+    syncStatus: "pending",
+    inventoryCheckPending: true,
+  }),
+});
+if (!fieldSession.id || fieldSession.patientId !== patient.id)
+  throw new Error("Field session create failed");
+
+const mobileConsult = await request("/clinic/mobile-consults", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    visitId: visit.id,
+    source: "field-mode",
+    status: "draft",
+    quickSummary: "Smoke quick consult",
+  }),
+});
+if (!mobileConsult.id || mobileConsult.patientId !== patient.id)
+  throw new Error("Mobile consult create failed");
+
+const mobileScan = await request("/clinic/mobile-scans", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    deviceId: mobileDevice.id,
+    scanType: "microchip-nfc",
+    status: "queued-sync",
+    lookupResult: "Smoke lookup pending",
+  }),
+});
+if (!mobileScan.id || mobileScan.patientId !== patient.id)
+  throw new Error("Mobile scan create failed");
+
+const mobileSummary = await request("/clinic/mobile/summary");
+if (
+  mobileSummary.counts.devices < 1 ||
+  mobileSummary.featureCoverage.length !== 3
+)
+  throw new Error("Mobile summary failed");
+
 const currentVaccination = await request(
   `/clinic/vaccinations/${vaccination.id}`,
   {
@@ -855,6 +918,60 @@ const updatedAsyncConsult = await request(
 if (updatedAsyncConsult.status !== "closed")
   throw new Error("Async consult workflow action failed");
 
+const updatedMobileDevice = await request(
+  `/clinic/mobile-devices/${mobileDevice.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      pushEnabled: true,
+      offlineSnapshotReady: true,
+      pendingNotifications: 0,
+    }),
+  },
+);
+if (!updatedMobileDevice.offlineSnapshotReady)
+  throw new Error("Mobile device workflow action failed");
+
+const updatedFieldSession = await request(
+  `/clinic/field-sessions/${fieldSession.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      syncStatus: "synced",
+      status: "synced",
+      inventoryCheckPending: false,
+    }),
+  },
+);
+if (updatedFieldSession.syncStatus !== "synced")
+  throw new Error("Field session workflow action failed");
+
+const updatedMobileConsult = await request(
+  `/clinic/mobile-consults/${mobileConsult.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: "synced",
+      transcriptionStatus: "complete",
+    }),
+  },
+);
+if (updatedMobileConsult.status !== "synced")
+  throw new Error("Mobile consult workflow action failed");
+
+const updatedMobileScan = await request(
+  `/clinic/mobile-scans/${mobileScan.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: "matched",
+      lookupResult: "Smoke lookup matched",
+    }),
+  },
+);
+if (updatedMobileScan.status !== "matched")
+  throw new Error("Mobile scan workflow action failed");
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: "PATCH",
   body: JSON.stringify({
@@ -919,6 +1036,21 @@ if (
   !audit.items.some(
     (event) =>
       event.entityType === "async-consult" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "mobile-device" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "field-session" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "mobile-consult" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) => event.entityType === "mobile-scan" && event.action === "updated",
   )
 ) {
   throw new Error("Audit trail did not capture create/update workflow events");

@@ -1338,6 +1338,126 @@ export const seedAsyncConsults = [
   },
 ];
 
+export const seedMobileDevices = [
+  {
+    id: "mob_001",
+    ownerId: "own_001",
+    mode: "owner",
+    platform: "iPhone",
+    deviceName: "Arta iPhone 15",
+    staffName: "",
+    pushEnabled: true,
+    cameraEnabled: true,
+    offlineSnapshotReady: true,
+    biometricEnabled: true,
+    microchipNfcEnabled: false,
+    pendingNotifications: 0,
+    lastSyncAt: "2026-05-12T05:40:00.000Z",
+  },
+  {
+    id: "mob_002",
+    ownerId: "",
+    mode: "field-staff",
+    platform: "iPad",
+    deviceName: "Tech Field iPad",
+    staffName: "Tech Arbnore Gashi",
+    pushEnabled: false,
+    cameraEnabled: true,
+    offlineSnapshotReady: false,
+    biometricEnabled: false,
+    microchipNfcEnabled: true,
+    pendingNotifications: 3,
+    lastSyncAt: "2026-05-10T14:15:00.000Z",
+  },
+];
+
+export const seedFieldSessions = [
+  {
+    id: "fld_001",
+    patientId: "pat_001",
+    visitId: "vis_001",
+    assignedDeviceId: "mob_002",
+    sessionType: "field-vet",
+    location: "Prishtine outskirts kennel visit",
+    status: "in-progress",
+    syncStatus: "pending",
+    scheduleViewReady: true,
+    inventoryCheckPending: true,
+    voiceNotesCaptured: 1,
+    photoCount: 3,
+    lastActivityAt: "2026-05-12T06:05:00.000Z",
+  },
+  {
+    id: "fld_002",
+    patientId: "pat_002",
+    visitId: "vis_002",
+    assignedDeviceId: "mob_002",
+    sessionType: "travel-docs",
+    location: "Reception desk mobile intake",
+    status: "synced",
+    syncStatus: "synced",
+    scheduleViewReady: true,
+    inventoryCheckPending: false,
+    voiceNotesCaptured: 0,
+    photoCount: 1,
+    lastActivityAt: "2026-05-11T15:10:00.000Z",
+  },
+];
+
+export const seedMobileConsults = [
+  {
+    id: "mco_001",
+    patientId: "pat_001",
+    visitId: "vis_001",
+    source: "field-mode",
+    status: "draft",
+    quickSummary: "Owner reported recurrent ear scratching during field check.",
+    transcriptionStatus: "pending",
+    photoCount: 2,
+    inventoryCheckStatus: "requested",
+    microchipScanned: false,
+    scheduleLinked: true,
+    createdAt: "2026-05-12T05:55:00.000Z",
+  },
+  {
+    id: "mco_002",
+    patientId: "pat_002",
+    visitId: "vis_002",
+    source: "owner-mobile",
+    status: "synced",
+    quickSummary: "Travel docs recheck captured on mobile and synced.",
+    transcriptionStatus: "complete",
+    photoCount: 1,
+    inventoryCheckStatus: "complete",
+    microchipScanned: true,
+    scheduleLinked: true,
+    createdAt: "2026-05-11T14:10:00.000Z",
+  },
+];
+
+export const seedMobileScans = [
+  {
+    id: "msc_001",
+    patientId: "pat_001",
+    deviceId: "mob_002",
+    scanType: "microchip-nfc",
+    source: "field-mode",
+    status: "manual-review",
+    lookupResult: "Offline cache used; registry verification still pending.",
+    scannedAt: "2026-05-12T05:58:00.000Z",
+  },
+  {
+    id: "msc_002",
+    patientId: "pat_002",
+    deviceId: "mob_002",
+    scanType: "microchip-nfc",
+    source: "clinic-mobile",
+    status: "matched",
+    lookupResult: "Microchip matched with passport workflow record.",
+    scannedAt: "2026-05-11T14:05:00.000Z",
+  },
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
@@ -1363,6 +1483,10 @@ export const clinicCoreSeed = {
   portalDocuments: seedPortalDocuments,
   telemedicineSessions: seedTelemedicineSessions,
   asyncConsults: seedAsyncConsults,
+  mobileDevices: seedMobileDevices,
+  fieldSessions: seedFieldSessions,
+  mobileConsults: seedMobileConsults,
+  mobileScans: seedMobileScans,
 };
 
 function collection(state, key) {
