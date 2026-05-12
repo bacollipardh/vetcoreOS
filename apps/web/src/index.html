@@ -39,13 +39,14 @@
           <button class="nav-item" data-view="operations">Operations</button>
           <button class="nav-item" data-view="inventory">Inventory</button>
           <button class="nav-item" data-view="finance">Finance</button>
+          <button class="nav-item" data-view="portal">Portal</button>
           <span class="nav-group">Controls</span>
           <button class="nav-item" data-view="audit">Audit</button>
           <button class="nav-item" data-view="roadmap">Roadmap</button>
         </nav>
         <div class="sidebar-note">
-          <span>P3</span>
-          <p>Coverage: F001-F236</p>
+          <span>P4</span>
+          <p>Coverage: F001-F261</p>
         </div>
       </aside>
       <main class="workspace">
@@ -1833,6 +1834,271 @@
                     ></textarea>
                   </label>
                   <button type="submit">Create plan</button>
+                </form>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section class="view" data-panel="portal">
+          <div class="metrics compact-metrics" id="portal-metrics"></div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">F237-F261</p>
+                  <h2>Owner portal and telemedicine</h2>
+                </div>
+              </div>
+              <div class="grid three" id="portal-coverage"></div>
+              <div class="panel-subsection">
+                <h2>Portal alerts</h2>
+                <div id="portal-alerts" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Portal accounts</h2>
+                <div id="portal-account-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Document library</h2>
+                <div id="portal-document-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Telemedicine</h2>
+                <div id="telemedicine-list" class="record-list"></div>
+              </div>
+              <div class="panel-subsection">
+                <h2>Async consults</h2>
+                <div id="async-consult-list" class="record-list"></div>
+              </div>
+            </section>
+            <section class="panel sticky-panel">
+              <div class="panel-header"><h2>Create portal account</h2></div>
+              <form class="form-card" data-form="portalAccount">
+                <label
+                  >Owner<select
+                    name="ownerId"
+                    id="portal-owner-options"
+                    required
+                  ></select
+                ></label>
+                <label
+                  >Login<select name="loginMethod">
+                    <option value="magic-link">Magic link</option>
+                    <option value="phone-otp">Phone OTP</option>
+                  </select></label
+                >
+                <label
+                  >Invite<select name="inviteStatus">
+                    <option value="invited">Invited</option>
+                    <option value="accepted">Accepted</option>
+                  </select></label
+                >
+                <label
+                  >Preferred language<input
+                    name="preferredLanguage"
+                    placeholder="sq / en / de"
+                /></label>
+                <label class="checkbox-line"
+                  ><input
+                    name="multiFactorEnabled"
+                    type="checkbox"
+                    value="true"
+                  />
+                  MFA enabled</label
+                >
+                <label class="checkbox-line"
+                  ><input name="multiPetEnabled" type="checkbox" value="true" />
+                  Multi-pet</label
+                >
+                <label class="checkbox-line"
+                  ><input
+                    name="multiClinicEnabled"
+                    type="checkbox"
+                    value="true"
+                  />
+                  Multi-clinic</label
+                >
+                <button type="submit">Create portal account</button>
+              </form>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Add portal document</h2></div>
+                <form class="form-card" data-form="portalDocument">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="portal-document-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Category<select name="category">
+                      <option value="vaccine-certificate">
+                        Vaccine certificate
+                      </option>
+                      <option value="invoice">Invoice</option>
+                      <option value="lab-report">Lab report</option>
+                      <option value="passport">Passport</option>
+                    </select></label
+                  >
+                  <label
+                    >Title<input
+                      name="title"
+                      placeholder="Document title"
+                      required
+                  /></label>
+                  <label
+                    >Source<select name="sourceModule">
+                      <option value="vaccinations">Vaccinations</option>
+                      <option value="labs">Labs</option>
+                      <option value="finance">Finance</option>
+                      <option value="manual">Manual</option>
+                    </select></label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="sharedInPortal"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Shared in portal</label
+                  >
+                  <label class="checkbox-line"
+                    ><input name="qrEnabled" type="checkbox" value="true" /> QR
+                    enabled</label
+                  >
+                  <button type="submit">Create document</button>
+                </form>
+              </div>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Schedule telemedicine</h2></div>
+                <form class="form-card" data-form="telemedicine">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="telemedicine-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Visit<select
+                      name="visitId"
+                      id="telemedicine-visit-options"
+                    ></select
+                  ></label>
+                  <label
+                    >Type<select name="sessionType">
+                      <option value="video-call">Video call</option>
+                      <option value="async-consult">Async consult</option>
+                    </select></label
+                  >
+                  <label
+                    >Platform<select name="platform">
+                      <option value="Jitsi">Jitsi</option>
+                      <option value="Daily">Daily</option>
+                      <option value="Portal">Portal</option>
+                    </select></label
+                  >
+                  <label
+                    >Status<select name="bookingStatus">
+                      <option value="scheduled">Scheduled</option>
+                      <option value="needs-response">Needs response</option>
+                    </select></label
+                  >
+                  <label
+                    >Starts at<input name="startsAt" type="datetime-local"
+                  /></label>
+                  <label
+                    >Clinician<input name="clinician" placeholder="Dr. Demo"
+                  /></label>
+                  <label
+                    >AI triage<select name="aiTriageStatus">
+                      <option value="queued">Queued</option>
+                      <option value="screened">Screened</option>
+                    </select></label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="asyncPhotoReview"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Async photo review</label
+                  >
+                  <label class="checkbox-line"
+                    ><input
+                      name="recordingConsent"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Recording consent</label
+                  >
+                  <label class="checkbox-line"
+                    ><input name="groupCall" type="checkbox" value="true" />
+                    Group call</label
+                  >
+                  <label
+                    >Note<textarea
+                      name="note"
+                      placeholder="Telemedicine note"
+                    ></textarea>
+                  </label>
+                  <button type="submit">Create telemedicine</button>
+                </form>
+              </div>
+              <div class="panel-subsection">
+                <div class="panel-header"><h2>Create async consult</h2></div>
+                <form class="form-card" data-form="asyncConsult">
+                  <label
+                    >Patient<select
+                      name="patientId"
+                      id="async-consult-patient-options"
+                      required
+                    ></select
+                  ></label>
+                  <label
+                    >Status<select name="status">
+                      <option value="awaiting-clinician">
+                        Awaiting clinician
+                      </option>
+                      <option value="owner-updated">Owner updated</option>
+                    </select></label
+                  >
+                  <label
+                    >Response due hours<input
+                      name="responseDueHours"
+                      type="number"
+                      min="1"
+                      value="4"
+                  /></label>
+                  <label
+                    >Symptom summary<textarea
+                      name="symptomSummary"
+                      placeholder="Owner complaint"
+                      required
+                    ></textarea>
+                  </label>
+                  <label
+                    >Photo count<input
+                      name="photoCount"
+                      type="number"
+                      min="0"
+                      value="0"
+                  /></label>
+                  <label class="checkbox-line"
+                    ><input
+                      name="medicationReminderEnabled"
+                      type="checkbox"
+                      value="true"
+                    />
+                    Medication reminders</label
+                  >
+                  <label
+                    >Triage recommendation<textarea
+                      name="triageRecommendation"
+                      placeholder="Triage guidance"
+                    ></textarea>
+                  </label>
+                  <button type="submit">Create async consult</button>
                 </form>
               </div>
             </section>

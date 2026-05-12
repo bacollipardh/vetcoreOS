@@ -1210,6 +1210,134 @@ export const seedWellnessPlans = [
   },
 ];
 
+export const seedPortalAccounts = [
+  {
+    id: "prt_001",
+    ownerId: "own_001",
+    loginMethod: "magic-link",
+    inviteStatus: "accepted",
+    multiFactorEnabled: false,
+    multiPetEnabled: true,
+    multiClinicEnabled: false,
+    preferredLanguage: "sq",
+    documentAccessCount: 6,
+    unreadMessages: 1,
+    paymentCardsOnFile: 1,
+    photoUploads: 2,
+  },
+  {
+    id: "prt_002",
+    ownerId: "own_002",
+    loginMethod: "phone-otp",
+    inviteStatus: "invited",
+    multiFactorEnabled: true,
+    multiPetEnabled: false,
+    multiClinicEnabled: true,
+    preferredLanguage: "de",
+    documentAccessCount: 4,
+    unreadMessages: 0,
+    paymentCardsOnFile: 0,
+    photoUploads: 1,
+  },
+];
+
+export const seedPortalDocuments = [
+  {
+    id: "doc_001",
+    patientId: "pat_001",
+    ownerId: "own_001",
+    category: "vaccine-certificate",
+    title: "Rabies certificate",
+    status: "available",
+    sourceModule: "vaccinations",
+    uploadedAt: "2026-05-03T09:20:00.000Z",
+    sharedInPortal: true,
+    qrEnabled: true,
+  },
+  {
+    id: "doc_002",
+    patientId: "pat_002",
+    ownerId: "own_002",
+    category: "invoice",
+    title: "Travel review estimate",
+    status: "available",
+    sourceModule: "finance",
+    uploadedAt: "2026-05-04T10:00:00.000Z",
+    sharedInPortal: true,
+    qrEnabled: false,
+  },
+  {
+    id: "doc_003",
+    patientId: "pat_001",
+    ownerId: "own_001",
+    category: "lab-report",
+    title: "CBC + chemistry",
+    status: "processing",
+    sourceModule: "labs",
+    uploadedAt: "2026-05-10T13:00:00.000Z",
+    sharedInPortal: false,
+    qrEnabled: false,
+  },
+];
+
+export const seedTelemedicineSessions = [
+  {
+    id: "tel_001",
+    patientId: "pat_001",
+    ownerId: "own_001",
+    sessionType: "video-call",
+    platform: "Jitsi",
+    bookingStatus: "scheduled",
+    startsAt: "2026-05-13T16:00:00.000Z",
+    clinician: "Dr. Elira Hoxha",
+    asyncPhotoReview: false,
+    aiTriageStatus: "screened",
+    recordingConsent: false,
+    groupCall: false,
+    note: "Follow-up for pruritus flare.",
+  },
+  {
+    id: "tel_002",
+    patientId: "pat_002",
+    ownerId: "own_002",
+    sessionType: "async-consult",
+    platform: "Portal",
+    bookingStatus: "needs-response",
+    startsAt: "2026-05-12T12:30:00.000Z",
+    clinician: "Dr. Nora Berisha",
+    asyncPhotoReview: true,
+    aiTriageStatus: "queued",
+    recordingConsent: false,
+    groupCall: false,
+    note: "Owner uploaded travel document photos.",
+  },
+];
+
+export const seedAsyncConsults = [
+  {
+    id: "asc_001",
+    patientId: "pat_001",
+    ownerId: "own_001",
+    status: "awaiting-clinician",
+    responseDueHours: 4,
+    symptomSummary: "Itching around ears after evening walk.",
+    photoCount: 2,
+    medicationReminderEnabled: true,
+    triageRecommendation: "Schedule tele-follow-up if persists.",
+  },
+  {
+    id: "asc_002",
+    patientId: "pat_002",
+    ownerId: "own_002",
+    status: "closed",
+    responseDueHours: 4,
+    symptomSummary: "Passport document clarification request.",
+    photoCount: 1,
+    medicationReminderEnabled: false,
+    triageRecommendation: "Documents sufficient after microchip scan.",
+  },
+];
+
 export const clinicCoreSeed = {
   owners: seedOwners,
   patients: seedPatients,
@@ -1231,6 +1359,10 @@ export const clinicCoreSeed = {
   payments: seedPayments,
   insuranceClaims: seedInsuranceClaims,
   wellnessPlans: seedWellnessPlans,
+  portalAccounts: seedPortalAccounts,
+  portalDocuments: seedPortalDocuments,
+  telemedicineSessions: seedTelemedicineSessions,
+  asyncConsults: seedAsyncConsults,
 };
 
 function collection(state, key) {

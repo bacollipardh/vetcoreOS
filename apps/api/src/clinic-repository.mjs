@@ -84,6 +84,18 @@ function normalizeState(state) {
     wellnessPlans: Array.isArray(state.wellnessPlans)
       ? state.wellnessPlans
       : clone(clinicCoreSeed.wellnessPlans || []),
+    portalAccounts: Array.isArray(state.portalAccounts)
+      ? state.portalAccounts
+      : clone(clinicCoreSeed.portalAccounts || []),
+    portalDocuments: Array.isArray(state.portalDocuments)
+      ? state.portalDocuments
+      : clone(clinicCoreSeed.portalDocuments || []),
+    telemedicineSessions: Array.isArray(state.telemedicineSessions)
+      ? state.telemedicineSessions
+      : clone(clinicCoreSeed.telemedicineSessions || []),
+    asyncConsults: Array.isArray(state.asyncConsults)
+      ? state.asyncConsults
+      : clone(clinicCoreSeed.asyncConsults || []),
     auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents : [],
   };
 }
@@ -1354,6 +1366,221 @@ export async function updateWellnessPlan(id, input) {
   );
   await writeClinicState(state);
   return state.wellnessPlans[index];
+}
+
+export async function createPortalAccount(input) {
+  const state = await readClinicState();
+  const owner = state.owners.find((entry) => entry.id === input.ownerId);
+  if (!owner) throw new Error("valid ownerId is required");
+  const account = {
+    id: makeId("prt"),
+    ownerId: owner.id,
+    loginMethod: normalizeText(input.loginMethod, "magic-link"),
+    inviteStatus: normalizeText(input.inviteStatus, "invited"),
+    multiFactorEnabled: Boolean(input.multiFactorEnabled),
+    multiPetEnabled: Boolean(input.multiPetEnabled),
+    multiClinicEnabled: Boolean(input.multiClinicEnabled),
+    preferredLanguage: normalizeText(
+      input.preferredLanguage,
+      owner.language || "sq",
+    ),
+    documentAccessCount: Number(input.documentAccessCount || 0),
+    unreadMessages: Number(input.unreadMessages || 0),
+    paymentCardsOnFile: Number(input.paymentCardsOnFile || 0),
+    photoUploads: Number(input.photoUploads || 0),
+  };
+  state.portalAccounts.push(account);
+  appendAudit(
+    state,
+    "created",
+    "portal-account",
+    account.id,
+    `Created portal account for ${owner.displayName}`,
+  );
+  await writeClinicState(state);
+  return account;
+}
+
+export async function updatePortalAccount(id, input) {
+  const state = await readClinicState();
+  const index = state.portalAccounts.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.portalAccounts[index] = {
+    ...state.portalAccounts[index],
+    ...input,
+    id,
+  };
+  appendAudit(
+    state,
+    "updated",
+    "portal-account",
+    id,
+    `Updated portal account ${state.portalAccounts[index].id}`,
+  );
+  await writeClinicState(state);
+  return state.portalAccounts[index];
+}
+
+export async function createPortalDocument(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const ownerId =
+    normalizeText(input.ownerId) ||
+    patient.ownerIds.find((id) =>
+      state.owners.some((owner) => owner.id === id),
+    );
+  if (!ownerId) throw new Error("valid ownerId is required");
+  const document = {
+    id: makeId("doc"),
+    patientId: patient.id,
+    ownerId,
+    category: normalizeText(input.category, "document"),
+    title: normalizeText(input.title, "Portal document"),
+    status: normalizeText(input.status, "available"),
+    sourceModule: normalizeText(input.sourceModule, "manual"),
+    uploadedAt: normalizeText(input.uploadedAt, nowIso()),
+    sharedInPortal: Boolean(input.sharedInPortal),
+    qrEnabled: Boolean(input.qrEnabled),
+  };
+  state.portalDocuments.push(document);
+  appendAudit(
+    state,
+    "created",
+    "portal-document",
+    document.id,
+    `Created portal document ${document.title}`,
+  );
+  await writeClinicState(state);
+  return document;
+}
+
+export async function updatePortalDocument(id, input) {
+  const state = await readClinicState();
+  const index = state.portalDocuments.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.portalDocuments[index] = {
+    ...state.portalDocuments[index],
+    ...input,
+    id,
+  };
+  appendAudit(
+    state,
+    "updated",
+    "portal-document",
+    id,
+    `Updated portal document ${state.portalDocuments[index].title}`,
+  );
+  await writeClinicState(state);
+  return state.portalDocuments[index];
+}
+
+export async function createTelemedicineSession(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const ownerId =
+    normalizeText(input.ownerId) ||
+    patient.ownerIds.find((id) =>
+      state.owners.some((owner) => owner.id === id),
+    );
+  if (!ownerId) throw new Error("valid ownerId is required");
+  const session = {
+    id: makeId("tel"),
+    patientId: patient.id,
+    ownerId,
+    sessionType: normalizeText(input.sessionType, "video-call"),
+    platform: normalizeText(input.platform, "Jitsi"),
+    bookingStatus: normalizeText(input.bookingStatus, "scheduled"),
+    startsAt: normalizeText(input.startsAt, nowIso()),
+    clinician: normalizeText(input.clinician, "Dr. Demo"),
+    asyncPhotoReview: Boolean(input.asyncPhotoReview),
+    aiTriageStatus: normalizeText(input.aiTriageStatus, "queued"),
+    recordingConsent: Boolean(input.recordingConsent),
+    groupCall: Boolean(input.groupCall),
+    note: normalizeText(input.note),
+  };
+  state.telemedicineSessions.push(session);
+  appendAudit(
+    state,
+    "created",
+    "telemedicine",
+    session.id,
+    `Created telemedicine session ${session.sessionType}`,
+  );
+  await writeClinicState(state);
+  return session;
+}
+
+export async function updateTelemedicineSession(id, input) {
+  const state = await readClinicState();
+  const index = state.telemedicineSessions.findIndex(
+    (record) => record.id === id,
+  );
+  if (index === -1) return null;
+  state.telemedicineSessions[index] = {
+    ...state.telemedicineSessions[index],
+    ...input,
+    id,
+  };
+  appendAudit(
+    state,
+    "updated",
+    "telemedicine",
+    id,
+    `Updated telemedicine session ${state.telemedicineSessions[index].id}`,
+  );
+  await writeClinicState(state);
+  return state.telemedicineSessions[index];
+}
+
+export async function createAsyncConsult(input) {
+  const state = await readClinicState();
+  const patient = state.patients.find((entry) => entry.id === input.patientId);
+  if (!patient) throw new Error("valid patientId is required");
+  const ownerId =
+    normalizeText(input.ownerId) ||
+    patient.ownerIds.find((id) =>
+      state.owners.some((owner) => owner.id === id),
+    );
+  if (!ownerId) throw new Error("valid ownerId is required");
+  const consult = {
+    id: makeId("asc"),
+    patientId: patient.id,
+    ownerId,
+    status: normalizeText(input.status, "awaiting-clinician"),
+    responseDueHours: Number(input.responseDueHours || 4),
+    symptomSummary: normalizeText(input.symptomSummary, "Owner update"),
+    photoCount: Number(input.photoCount || 0),
+    medicationReminderEnabled: Boolean(input.medicationReminderEnabled),
+    triageRecommendation: normalizeText(input.triageRecommendation),
+  };
+  state.asyncConsults.push(consult);
+  appendAudit(
+    state,
+    "created",
+    "async-consult",
+    consult.id,
+    `Created async consult ${consult.id}`,
+  );
+  await writeClinicState(state);
+  return consult;
+}
+
+export async function updateAsyncConsult(id, input) {
+  const state = await readClinicState();
+  const index = state.asyncConsults.findIndex((record) => record.id === id);
+  if (index === -1) return null;
+  state.asyncConsults[index] = { ...state.asyncConsults[index], ...input, id };
+  appendAudit(
+    state,
+    "updated",
+    "async-consult",
+    id,
+    `Updated async consult ${state.asyncConsults[index].id}`,
+  );
+  await writeClinicState(state);
+  return state.asyncConsults[index];
 }
 
 function nextYearDate(dateText) {

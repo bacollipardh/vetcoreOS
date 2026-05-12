@@ -417,6 +417,65 @@ if (
 )
   throw new Error("Finance summary failed");
 
+const portalAccount = await request("/clinic/portal-accounts", {
+  method: "POST",
+  body: JSON.stringify({
+    ownerId: owner.id,
+    loginMethod: "magic-link",
+    inviteStatus: "invited",
+    preferredLanguage: "sq",
+    multiPetEnabled: true,
+  }),
+});
+if (!portalAccount.id || portalAccount.ownerId !== owner.id)
+  throw new Error("Portal account create failed");
+
+const portalDocument = await request("/clinic/portal-documents", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    category: "invoice",
+    title: "Smoke portal document",
+    sourceModule: "finance",
+    sharedInPortal: false,
+  }),
+});
+if (!portalDocument.id || portalDocument.patientId !== patient.id)
+  throw new Error("Portal document create failed");
+
+const telemedicine = await request("/clinic/telemedicine-sessions", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    visitId: visit.id,
+    sessionType: "video-call",
+    platform: "Jitsi",
+    bookingStatus: "scheduled",
+    clinician: "Dr. Smoke",
+  }),
+});
+if (!telemedicine.id || telemedicine.patientId !== patient.id)
+  throw new Error("Telemedicine create failed");
+
+const asyncConsult = await request("/clinic/async-consults", {
+  method: "POST",
+  body: JSON.stringify({
+    patientId: patient.id,
+    status: "awaiting-clinician",
+    symptomSummary: "Smoke async triage",
+    photoCount: 1,
+  }),
+});
+if (!asyncConsult.id || asyncConsult.patientId !== patient.id)
+  throw new Error("Async consult create failed");
+
+const portalSummary = await request("/clinic/portal/summary");
+if (
+  portalSummary.counts.accounts < 1 ||
+  portalSummary.featureCoverage.length !== 3
+)
+  throw new Error("Portal summary failed");
+
 const currentVaccination = await request(
   `/clinic/vaccinations/${vaccination.id}`,
   {
@@ -734,6 +793,68 @@ const updatedPlan = await request(`/clinic/wellness-plans/${plan.id}`, {
 if (updatedPlan.status !== "active" || updatedPlan.redemptionUsed !== 1)
   throw new Error("Wellness plan workflow action failed");
 
+const updatedPortalAccount = await request(
+  `/clinic/portal-accounts/${portalAccount.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      inviteStatus: "accepted",
+      unreadMessages: 0,
+      paymentCardsOnFile: 1,
+    }),
+  },
+);
+if (
+  updatedPortalAccount.inviteStatus !== "accepted" ||
+  updatedPortalAccount.paymentCardsOnFile !== 1
+)
+  throw new Error("Portal account workflow action failed");
+
+const updatedPortalDocument = await request(
+  `/clinic/portal-documents/${portalDocument.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      sharedInPortal: true,
+      status: "available",
+    }),
+  },
+);
+if (
+  !updatedPortalDocument.sharedInPortal ||
+  updatedPortalDocument.status !== "available"
+)
+  throw new Error("Portal document workflow action failed");
+
+const updatedTelemedicine = await request(
+  `/clinic/telemedicine-sessions/${telemedicine.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      bookingStatus: "confirmed",
+      aiTriageStatus: "screened",
+    }),
+  },
+);
+if (
+  updatedTelemedicine.bookingStatus !== "confirmed" ||
+  updatedTelemedicine.aiTriageStatus !== "screened"
+)
+  throw new Error("Telemedicine workflow action failed");
+
+const updatedAsyncConsult = await request(
+  `/clinic/async-consults/${asyncConsult.id}`,
+  {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: "closed",
+      triageRecommendation: "Monitor at home",
+    }),
+  },
+);
+if (updatedAsyncConsult.status !== "closed")
+  throw new Error("Async consult workflow action failed");
+
 const updatedVisit = await request(`/clinic/visits/${visit.id}`, {
   method: "PATCH",
   body: JSON.stringify({
@@ -782,6 +903,22 @@ if (
   !audit.items.some(
     (event) =>
       event.entityType === "wellness-plan" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "portal-account" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "portal-document" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "telemedicine" && event.action === "updated",
+  ) ||
+  !audit.items.some(
+    (event) =>
+      event.entityType === "async-consult" && event.action === "updated",
   )
 ) {
   throw new Error("Audit trail did not capture create/update workflow events");

@@ -39,6 +39,13 @@ import {
   listPrescriptions,
 } from "../../../packages/shared/prescriptions.mjs";
 import {
+  getPortalSummary,
+  listAsyncConsults,
+  listPortalAccounts,
+  listPortalDocuments,
+  listTelemedicineSessions,
+} from "../../../packages/shared/portal.mjs";
+import {
   getSpecialtySummary,
   listSpecialties,
 } from "../../../packages/shared/specialties.mjs";
@@ -62,13 +69,17 @@ import {
   createOwner,
   createPatient,
   createPayment,
+  createPortalAccount,
+  createPortalDocument,
   createPurchaseOrder,
   createPrescription,
   createSurgery,
   createSpecialty,
+  createTelemedicineSession,
   createVaccination,
   createVisit,
   createWellnessPlan,
+  createAsyncConsult,
   readClinicState,
   updateDiagnostic,
   updateInvoice,
@@ -80,14 +91,18 @@ import {
   updateClientMessage,
   updateOwner,
   updatePayment,
+  updatePortalAccount,
+  updatePortalDocument,
   updatePatient,
   updatePurchaseOrder,
   updatePrescription,
   updateSurgery,
   updateSpecialty,
+  updateTelemedicineSession,
   updateVaccination,
   updateVisit,
   updateWellnessPlan,
+  updateAsyncConsult,
 } from "./clinic-repository.mjs";
 
 function sendJson(response, statusCode, payload) {
@@ -267,6 +282,54 @@ export function createVetCoreApiServer() {
       if (request.method === "GET" && url.pathname === "/clinic/labs") {
         await sendClinicPayload(response, (state) => ({
           items: listLabs(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/portal/summary"
+      ) {
+        await sendClinicPayload(response, (state) => getPortalSummary(state));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/portal-accounts"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listPortalAccounts(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/portal-documents"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listPortalDocuments(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/telemedicine-sessions"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listTelemedicineSessions(state),
+        }));
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/clinic/async-consults"
+      ) {
+        await sendClinicPayload(response, (state) => ({
+          items: listAsyncConsults(state),
         }));
         return;
       }
@@ -483,6 +546,54 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/portal-accounts"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createPortalAccount(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/portal-documents"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createPortalDocument(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/telemedicine-sessions"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createTelemedicineSession(await readBody(request)),
+        );
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/clinic/async-consults"
+      ) {
+        sendJson(
+          response,
+          201,
+          await createAsyncConsult(await readBody(request)),
+        );
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/clinic/invoices") {
         sendJson(response, 201, await createInvoice(await readBody(request)));
         return;
@@ -680,6 +791,68 @@ export function createVetCoreApiServer() {
         return;
       }
 
+      const portalAccountId = matchId(url.pathname, "/clinic/portal-accounts");
+      if (request.method === "PATCH" && portalAccountId) {
+        const account = await updatePortalAccount(
+          portalAccountId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          account ? 200 : 404,
+          account || { error: "Portal account not found" },
+        );
+        return;
+      }
+
+      const portalDocumentId = matchId(
+        url.pathname,
+        "/clinic/portal-documents",
+      );
+      if (request.method === "PATCH" && portalDocumentId) {
+        const document = await updatePortalDocument(
+          portalDocumentId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          document ? 200 : 404,
+          document || { error: "Portal document not found" },
+        );
+        return;
+      }
+
+      const telemedicineId = matchId(
+        url.pathname,
+        "/clinic/telemedicine-sessions",
+      );
+      if (request.method === "PATCH" && telemedicineId) {
+        const session = await updateTelemedicineSession(
+          telemedicineId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          session ? 200 : 404,
+          session || { error: "Telemedicine session not found" },
+        );
+        return;
+      }
+
+      const asyncConsultId = matchId(url.pathname, "/clinic/async-consults");
+      if (request.method === "PATCH" && asyncConsultId) {
+        const consult = await updateAsyncConsult(
+          asyncConsultId,
+          await readBody(request),
+        );
+        sendJson(
+          response,
+          consult ? 200 : 404,
+          consult || { error: "Async consult not found" },
+        );
+        return;
+      }
+
       const invoiceId = matchId(url.pathname, "/clinic/invoices");
       if (request.method === "PATCH" && invoiceId) {
         const invoice = await updateInvoice(invoiceId, await readBody(request));
@@ -812,6 +985,11 @@ export function createVetCoreApiServer() {
           "/clinic/hospitalizations",
           "/clinic/diagnostics",
           "/clinic/labs",
+          "/clinic/portal/summary",
+          "/clinic/portal-accounts",
+          "/clinic/portal-documents",
+          "/clinic/telemedicine-sessions",
+          "/clinic/async-consults",
           "/clinic/finance/summary",
           "/clinic/invoices",
           "/clinic/payments",

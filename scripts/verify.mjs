@@ -30,6 +30,10 @@ import {
   operationsFeatureCoverage,
 } from "../packages/shared/operations.mjs";
 import {
+  getPortalSummary,
+  portalFeatureCoverage,
+} from "../packages/shared/portal.mjs";
+import {
   getPrescriptionSummary,
   prescriptionFeatureCoverage,
 } from "../packages/shared/prescriptions.mjs";
@@ -140,6 +144,12 @@ for (const range of ["F192-F206", "F207-F222", "F223-F236"]) {
   }
 }
 
+for (const range of ["F237-F245", "F246-F255", "F256-F261"]) {
+  if (!portalFeatureCoverage.some((coverage) => coverage.range === range)) {
+    throw new Error(`Missing P4 portal coverage range ${range}`);
+  }
+}
+
 const summary = getClinicCoreSummary(clinicCoreSeed);
 const vaccinationSummary = getVaccinationSummary(clinicCoreSeed);
 const prescriptionSummary = getPrescriptionSummary(clinicCoreSeed);
@@ -151,6 +161,7 @@ const specialtySummary = getSpecialtySummary(clinicCoreSeed);
 const operationsSummary = getOperationsSummary(clinicCoreSeed);
 const inventorySummary = getInventorySummary(clinicCoreSeed);
 const financeSummary = getFinanceSummary(clinicCoreSeed);
+const portalSummary = getPortalSummary(clinicCoreSeed);
 if (
   summary.counts.patients < 2 ||
   summary.counts.owners < 2 ||
@@ -164,7 +175,8 @@ if (
   specialtySummary.counts.records < 2 ||
   operationsSummary.counts.appointments < 3 ||
   inventorySummary.counts.items < 3 ||
-  financeSummary.counts.invoices < 2
+  financeSummary.counts.invoices < 2 ||
+  portalSummary.counts.accounts < 2
 ) {
   throw new Error("Clinic core seed data is incomplete");
 }
@@ -229,4 +241,7 @@ console.log(
 );
 console.log(
   `Verified P3 finance seed with ${financeSummary.counts.invoices} invoices, ${financeSummary.counts.claims} claims and ${financeSummary.counts.activePlans} active plans.`,
+);
+console.log(
+  `Verified P4 portal seed with ${portalSummary.counts.accounts} accounts, ${portalSummary.counts.telemedicine} telemedicine sessions and ${portalSummary.alerts.length} alerts.`,
 );

@@ -14,6 +14,7 @@ const viewTitles = {
   operations: "Operations Hub",
   inventory: "Pharmacy & Inventory",
   finance: "Finance Hub",
+  portal: "Portal & Telemedicine",
   audit: "Audit Trail",
   roadmap: "Product Roadmap",
 };
@@ -52,6 +53,11 @@ let latestState = {
   payments: [],
   insuranceClaims: [],
   wellnessPlans: [],
+  portalSummary: null,
+  portalAccounts: [],
+  portalDocuments: [],
+  telemedicineSessions: [],
+  asyncConsults: [],
   auditEvents: [],
 };
 
@@ -124,6 +130,10 @@ const modalLabels = {
   payment: "Register payment",
   insuranceClaim: "Submit insurance claim",
   wellnessPlan: "Create wellness plan",
+  portalAccount: "Create portal account",
+  portalDocument: "Add portal document",
+  telemedicine: "Schedule telemedicine",
+  asyncConsult: "Create async consult",
 };
 function openModalPanel(panel) {
   if (!panel) return;
@@ -218,6 +228,10 @@ const detailCollections = {
   payment: "payments",
   insuranceClaim: "insuranceClaims",
   wellnessPlan: "wellnessPlans",
+  portalAccount: "portalAccounts",
+  portalDocument: "portalDocuments",
+  telemedicine: "telemedicineSessions",
+  asyncConsult: "asyncConsults",
   audit: "auditEvents",
 };
 const detailTitles = {
@@ -239,6 +253,10 @@ const detailTitles = {
   payment: "Payment detail",
   insuranceClaim: "Insurance claim detail",
   wellnessPlan: "Wellness plan detail",
+  portalAccount: "Portal account detail",
+  portalDocument: "Portal document detail",
+  telemedicine: "Telemedicine detail",
+  asyncConsult: "Async consult detail",
   audit: "Audit event",
 };
 function ensureDetailModal() {
@@ -757,6 +775,82 @@ function recordDetail(type, record) {
       ),
     ].join("");
   }
+  if (type === "portalAccount") {
+    return [
+      detailSection(
+        "Portal account",
+        [
+          ["Owner", record.owner?.displayName],
+          ["Login", record.loginMethod],
+          ["Invite", record.inviteStatus],
+          ["Risk", record.riskStatus],
+          ["Language", record.preferredLanguage],
+          ["Unread messages", record.unreadMessages],
+          ["Cards on file", record.paymentCardsOnFile],
+        ],
+        compactList(
+          record.patients?.map((patient) => patient.name),
+          "No linked pets.",
+        ),
+      ),
+    ].join("");
+  }
+  if (type === "portalDocument") {
+    return [
+      detailSection("Portal document", [
+        ["Patient", patientName],
+        ["Owner", record.owner?.displayName],
+        ["Category", record.category],
+        ["Title", record.title],
+        ["Status", record.status],
+        ["Source", record.sourceModule],
+        ["Portal share", record.sharedInPortal ? "Yes" : "No"],
+        ["QR", record.qrEnabled ? "Enabled" : "Off"],
+      ]),
+    ].join("");
+  }
+  if (type === "telemedicine") {
+    return [
+      detailSection(
+        "Telemedicine session",
+        [
+          ["Patient", patientName],
+          ["Owner", record.owner?.displayName],
+          ["Type", record.sessionType],
+          ["Platform", record.platform],
+          ["Status", record.bookingStatus],
+          ["Risk", record.riskStatus],
+          ["Clinician", record.clinician],
+          [
+            "Starts",
+            record.startsAt ? new Date(record.startsAt).toLocaleString() : "-",
+          ],
+          ["AI triage", record.aiTriageStatus],
+        ],
+        compactList([record.note], "No telemedicine note."),
+      ),
+    ].join("");
+  }
+  if (type === "asyncConsult") {
+    return [
+      detailSection(
+        "Async consult",
+        [
+          ["Patient", patientName],
+          ["Owner", record.owner?.displayName],
+          ["Status", record.status],
+          ["Risk", record.riskStatus],
+          ["Response due", `${record.responseDueHours}h`],
+          ["Photos", record.photoCount],
+          [
+            "Medication reminders",
+            record.medicationReminderEnabled ? "Yes" : "No",
+          ],
+        ],
+        `${compactList([record.symptomSummary], "No symptom summary.")}${compactList([record.triageRecommendation], "No triage recommendation.")}`,
+      ),
+    ].join("");
+  }
   return detailSection(
     "Record",
     Object.entries(record).filter(
@@ -809,6 +903,18 @@ function insuranceClaimInputs(record) {
 function wellnessPlanInputs(record) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="wellness-plan-update" data-id="${record.id}"><h3>Plan input</h3><label>Status<select name="status"><option value="draft">draft</option><option value="active">active</option><option value="paused">paused</option><option value="cancelled">cancelled</option></select></label><label>Next billing<input name="nextBillingDate" type="date" value="${record.nextBillingDate || ""}" /></label><label>Redemption used<input name="redemptionUsed" type="number" min="0" value="${record.redemptionUsed || 0}" /></label><label class="checkbox-line"><input name="pauseRequested" type="checkbox" value="true" ${record.pauseRequested ? "checked" : ""} /> Pause requested</label><label>Notes<textarea name="notes">${record.notes || ""}</textarea></label><button type="submit">Save plan</button></form></div>`;
 }
+function portalAccountInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="portal-account-update" data-id="${record.id}"><h3>Portal account</h3><label>Invite status<select name="inviteStatus"><option value="invited">invited</option><option value="accepted">accepted</option></select></label><label>Preferred language<input name="preferredLanguage" value="${record.preferredLanguage || ""}" /></label><label>Unread messages<input name="unreadMessages" type="number" min="0" value="${record.unreadMessages || 0}" /></label><label>Cards on file<input name="paymentCardsOnFile" type="number" min="0" value="${record.paymentCardsOnFile || 0}" /></label><button type="submit">Save portal account</button></form></div>`;
+}
+function portalDocumentInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="portal-document-update" data-id="${record.id}"><h3>Portal document</h3><label>Status<select name="status"><option value="processing">processing</option><option value="available">available</option><option value="archived">archived</option></select></label><label class="checkbox-line"><input name="sharedInPortal" type="checkbox" value="true" ${record.sharedInPortal ? "checked" : ""} /> Shared in portal</label><label class="checkbox-line"><input name="qrEnabled" type="checkbox" value="true" ${record.qrEnabled ? "checked" : ""} /> QR enabled</label><button type="submit">Save document</button></form></div>`;
+}
+function telemedicineInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="telemedicine-update" data-id="${record.id}"><h3>Telemedicine input</h3><label>Status<select name="bookingStatus"><option value="scheduled">scheduled</option><option value="confirmed">confirmed</option><option value="needs-response">needs-response</option><option value="completed">completed</option></select></label><label>AI triage<select name="aiTriageStatus"><option value="queued">queued</option><option value="screened">screened</option><option value="complete">complete</option></select></label><label class="checkbox-line"><input name="recordingConsent" type="checkbox" value="true" ${record.recordingConsent ? "checked" : ""} /> Recording consent</label><label>Note<textarea name="note">${record.note || ""}</textarea></label><button type="submit">Save telemedicine</button></form></div>`;
+}
+function asyncConsultInputs(record) {
+  return `<div class="detail-tools"><form class="form-card" data-detail-form="async-consult-update" data-id="${record.id}"><h3>Async consult</h3><label>Status<select name="status"><option value="awaiting-clinician">awaiting-clinician</option><option value="owner-updated">owner-updated</option><option value="closed">closed</option></select></label><label>Photo count<input name="photoCount" type="number" min="0" value="${record.photoCount || 0}" /></label><label class="checkbox-line"><input name="medicationReminderEnabled" type="checkbox" value="true" ${record.medicationReminderEnabled ? "checked" : ""} /> Medication reminders</label><label>Triage<textarea name="triageRecommendation">${record.triageRecommendation || ""}</textarea></label><button type="submit">Save async consult</button></form></div>`;
+}
 function visitInputs(visit) {
   return `<div class="detail-tools"><form class="form-card" data-detail-form="visit-soap" data-id="${visit.id}"><h3>Clinical input</h3><label>Anamnesis<textarea name="anamnesis">${visit.anamnesis || ""}</textarea></label><label>Temperature C<input name="temperatureC" type="number" step="0.1" value="${visit.physicalExam?.temperatureC || ""}" /></label><label>Pulse bpm<input name="pulseBpm" type="number" value="${visit.physicalExam?.pulseBpm || ""}" /></label><label>Respiration rpm<input name="respirationRpm" type="number" value="${visit.physicalExam?.respirationRpm || ""}" /></label><label>Diagnosis<input name="diagnosis" value="${visit.diagnoses?.[0]?.label || ""}" /></label><label>Treatment plan<input name="treatmentPlan" value="${(visit.treatmentPlan || []).join(", ")}" /></label><button type="submit">Save visit info</button></form><form class="form-card" data-detail-form="visit-procedure" data-id="${visit.id}"><h3>Add procedure</h3><label>Procedure<input name="procedureName" required /></label><label>Cost EUR<input name="procedureCost" type="number" step="0.01" /></label><button type="submit">Add procedure</button></form></div>`;
 }
@@ -838,6 +944,10 @@ function openRecordDetail(type, id) {
     payment: paymentInputs,
     insuranceClaim: insuranceClaimInputs,
     wellnessPlan: wellnessPlanInputs,
+    portalAccount: portalAccountInputs,
+    portalDocument: portalDocumentInputs,
+    telemedicine: telemedicineInputs,
+    asyncConsult: asyncConsultInputs,
     visit: visitInputs,
     surgery: surgeryInputs,
   };
@@ -903,6 +1013,24 @@ function openRecordDetail(type, id) {
   }
   if (type === "wellnessPlan") {
     panel.querySelector('[name="status"]').value = record.status || "draft";
+  }
+  if (type === "portalAccount") {
+    panel.querySelector('[name="inviteStatus"]').value =
+      record.inviteStatus || "invited";
+  }
+  if (type === "portalDocument") {
+    panel.querySelector('[name="status"]').value =
+      record.status || "processing";
+  }
+  if (type === "telemedicine") {
+    panel.querySelector('[name="bookingStatus"]').value =
+      record.bookingStatus || "scheduled";
+    panel.querySelector('[name="aiTriageStatus"]').value =
+      record.aiTriageStatus || "queued";
+  }
+  if (type === "asyncConsult") {
+    panel.querySelector('[name="status"]').value =
+      record.status || "awaiting-clinician";
   }
   openModalPanel(panel);
 }
@@ -1158,6 +1286,37 @@ function wellnessPlanRow(record) {
       : `<button class="text-button" type="button" data-pause-plan-id="${record.id}">Pause</button>`;
   return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.planName}</h3><p class="record-meta">${record.programType} · ${record.billingProvider} · next ${record.nextBillingDate}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${activateAction}${pauseAction}<button class="text-button" type="button" data-detail-type="wellnessPlan" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Monthly ${money(record.monthlyFeeCents)} · Redemptions ${record.redemptionUsed}/${record.redemptionTotal}</p><div class="badges"><span class="badge">${record.status}</span><span class="badge">${record.autoBilling ? "auto-bill" : "manual bill"}</span></div></article>`;
 }
+function portalAccountRow(record) {
+  const statusClass = record.riskStatus === "active" ? "ok" : "alert";
+  const acceptAction =
+    record.inviteStatus === "accepted"
+      ? ""
+      : `<button class="text-button" type="button" data-accept-portal-id="${record.id}">Accept</button>`;
+  return `<article class="record-row"><header><div><h3>${record.owner?.displayName || "Owner"}</h3><p class="record-meta">${record.loginMethod} · ${record.preferredLanguage} · pets ${record.patients?.length || 0}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${acceptAction}<button class="text-button" type="button" data-detail-type="portalAccount" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Invite ${record.inviteStatus} · Unread ${record.unreadMessages} · Cards ${record.paymentCardsOnFile}</p><div class="badges"><span class="badge">${record.multiPetEnabled ? "multi-pet" : "single-pet"}</span><span class="badge">${record.multiClinicEnabled ? "multi-clinic" : "single-clinic"}</span></div></article>`;
+}
+function portalDocumentRow(record) {
+  const statusClass = record.sharedInPortal ? "ok" : "alert";
+  const shareAction = record.sharedInPortal
+    ? ""
+    : `<button class="text-button" type="button" data-share-portal-doc-id="${record.id}">Share</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.title}</h3><p class="record-meta">${record.category} · ${record.sourceModule} · ${new Date(record.uploadedAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.status}</span>${shareAction}<button class="text-button" type="button" data-detail-type="portalDocument" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Portal ${record.sharedInPortal ? "shared" : "internal"} · QR ${record.qrEnabled ? "enabled" : "off"}</p><div class="badges"><span class="badge">${record.status}</span></div></article>`;
+}
+function telemedicineRow(record) {
+  const statusClass = record.riskStatus === "scheduled" ? "ok" : "alert";
+  const confirmAction =
+    record.bookingStatus === "confirmed" || record.bookingStatus === "completed"
+      ? ""
+      : `<button class="text-button" type="button" data-confirm-telemedicine-id="${record.id}">Confirm</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · ${record.sessionType}</h3><p class="record-meta">${record.platform} · ${record.clinician} · ${new Date(record.startsAt).toLocaleString()}</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${confirmAction}<button class="text-button" type="button" data-detail-type="telemedicine" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">Status ${record.bookingStatus} · AI triage ${record.aiTriageStatus} · Recording ${record.recordingConsent ? "consented" : "pending"}</p><div class="badges"><span class="badge">${record.groupCall ? "group" : "1:1"}</span><span class="badge">${record.asyncPhotoReview ? "photo review" : "live only"}</span></div></article>`;
+}
+function asyncConsultRow(record) {
+  const statusClass = record.riskStatus === "closed" ? "ok" : "alert";
+  const closeAction =
+    record.status === "closed"
+      ? ""
+      : `<button class="text-button" type="button" data-close-async-consult-id="${record.id}">Close</button>`;
+  return `<article class="record-row"><header><div><h3>${record.patient?.name || "Patient"} · Async consult</h3><p class="record-meta">${record.owner?.displayName || "Owner"} · due ${record.responseDueHours}h</p></div><div class="visit-actions"><span class="${statusClass}">${record.riskStatus}</span>${closeAction}<button class="text-button" type="button" data-detail-type="asyncConsult" data-detail-id="${record.id}">Details</button></div></header><p class="record-meta">${record.symptomSummary}</p><div class="badges"><span class="badge">${record.photoCount} photos</span><span class="badge">${record.medicationReminderEnabled ? "reminders on" : "reminders off"}</span></div></article>`;
+}
 function auditRow(event) {
   return `<article class="record-row"><header><div><h3>${event.summary}</h3><p class="record-meta">${new Date(event.at).toLocaleString()} · ${event.actor}</p></div><div class="visit-actions"><span class="badge">${event.action}</span><span class="badge">${event.entityType}</span></div></header><p class="record-meta">Record: ${event.entityId}</p></article>`;
 }
@@ -1274,6 +1433,27 @@ function patientTimeline(patient, visits) {
         `<article class="timeline-item"><span>${record.startDate}</span><strong>${record.planName}</strong><p>${record.status} · next billing ${record.nextBillingDate}</p><small>F230-F236 wellness plans</small></article>`,
     )
     .join("");
+  const portalDocumentItems = latestState.portalDocuments
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.uploadedAt).toLocaleDateString()}</span><strong>${record.title}</strong><p>${record.category} · ${record.sharedInPortal ? "shared" : "internal"}</p><small>F246-F255 portal documents</small></article>`,
+    )
+    .join("");
+  const telemedicineItems = latestState.telemedicineSessions
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${new Date(record.startsAt).toLocaleDateString()}</span><strong>${record.sessionType}</strong><p>${record.bookingStatus} · ${record.platform}</p><small>F256-F261 telemedicine</small></article>`,
+    )
+    .join("");
+  const asyncConsultItems = latestState.asyncConsults
+    .filter((record) => record.patientId === patient.id)
+    .map(
+      (record) =>
+        `<article class="timeline-item"><span>${record.status}</span><strong>Async consult</strong><p>${record.symptomSummary}</p><small>F254-F260 async consults</small></article>`,
+    )
+    .join("");
   const weightItems =
     patient.weightHistory
       ?.map(
@@ -1296,8 +1476,11 @@ function patientTimeline(patient, visits) {
     paymentItems ||
     claimItems ||
     planItems ||
+    portalDocumentItems ||
+    telemedicineItems ||
+    asyncConsultItems ||
     weightItems
-    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${controlledItems}${invoiceItems}${paymentItems}${claimItems}${planItems}${weightItems}`
+    ? `${visitItems}${vaccineItems}${rxItems}${surgeryItems}${stayItems}${diagnosticItems}${labItems}${specialtyItems}${appointmentItems}${messageItems}${controlledItems}${invoiceItems}${paymentItems}${claimItems}${planItems}${portalDocumentItems}${telemedicineItems}${asyncConsultItems}${weightItems}`
     : '<p class="muted">No clinical timeline yet.</p>';
 }
 function patientInputs(patient) {
@@ -1400,6 +1583,7 @@ function bindTopbar() {
       renderOperations();
       renderInventory();
       renderFinance();
+      renderPortal();
       renderAudit();
     });
   document.addEventListener("click", (event) => {
@@ -1515,7 +1699,7 @@ function splitTags(value) {
 function bindWorkflowActions() {
   document.addEventListener("click", async (event) => {
     const button = event.target.closest(
-      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id], [data-dispense-inventory-id], [data-receive-inventory-id], [data-approve-po-id], [data-receive-po-id], [data-match-po-id], [data-approve-invoice-id], [data-issue-invoice-id], [data-capture-payment-id], [data-submit-claim-id], [data-approve-claim-id], [data-activate-plan-id], [data-pause-plan-id]",
+      "[data-mark-vaccine-id], [data-complete-surgery-id], [data-start-recovery-id], [data-complete-stay-tasks-id], [data-discharge-stay-id], [data-generate-thumbnail-id], [data-finalize-diagnostic-id], [data-review-lab-id], [data-share-lab-id], [data-complete-specialty-id], [data-close-specialty-tasks-id], [data-confirm-appointment-id], [data-checkin-appointment-id], [data-no-show-appointment-id], [data-send-message-id], [data-mark-message-replied-id], [data-dispense-inventory-id], [data-receive-inventory-id], [data-approve-po-id], [data-receive-po-id], [data-match-po-id], [data-approve-invoice-id], [data-issue-invoice-id], [data-capture-payment-id], [data-submit-claim-id], [data-approve-claim-id], [data-activate-plan-id], [data-pause-plan-id], [data-accept-portal-id], [data-share-portal-doc-id], [data-confirm-telemedicine-id], [data-close-async-consult-id]",
     );
     if (!button) return;
     try {
@@ -1994,6 +2178,49 @@ function bindWorkflowActions() {
         );
         setStatus("Wellness plan paused.");
       }
+      if (button.dataset.acceptPortalId) {
+        await fetchJson(
+          `/clinic/portal-accounts/${button.dataset.acceptPortalId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ inviteStatus: "accepted" }),
+          },
+        );
+        setStatus("Portal invite accepted.");
+      }
+      if (button.dataset.sharePortalDocId) {
+        await fetchJson(
+          `/clinic/portal-documents/${button.dataset.sharePortalDocId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ sharedInPortal: true, status: "available" }),
+          },
+        );
+        setStatus("Portal document shared.");
+      }
+      if (button.dataset.confirmTelemedicineId) {
+        await fetchJson(
+          `/clinic/telemedicine-sessions/${button.dataset.confirmTelemedicineId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              bookingStatus: "confirmed",
+              aiTriageStatus: "screened",
+            }),
+          },
+        );
+        setStatus("Telemedicine confirmed.");
+      }
+      if (button.dataset.closeAsyncConsultId) {
+        await fetchJson(
+          `/clinic/async-consults/${button.dataset.closeAsyncConsultId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: "closed" }),
+          },
+        );
+        setStatus("Async consult closed.");
+      }
       await render();
     } catch (error) {
       setStatus(error.message, "error");
@@ -2048,6 +2275,23 @@ async function submitForm(form) {
     data.autoBilling = data.autoBilling === "true";
     data.pauseRequested = data.pauseRequested === "true";
   }
+  if (type === "portalAccount") {
+    data.multiFactorEnabled = data.multiFactorEnabled === "true";
+    data.multiPetEnabled = data.multiPetEnabled === "true";
+    data.multiClinicEnabled = data.multiClinicEnabled === "true";
+  }
+  if (type === "portalDocument") {
+    data.sharedInPortal = data.sharedInPortal === "true";
+    data.qrEnabled = data.qrEnabled === "true";
+  }
+  if (type === "telemedicine") {
+    data.asyncPhotoReview = data.asyncPhotoReview === "true";
+    data.recordingConsent = data.recordingConsent === "true";
+    data.groupCall = data.groupCall === "true";
+  }
+  if (type === "asyncConsult") {
+    data.medicationReminderEnabled = data.medicationReminderEnabled === "true";
+  }
   const endpoints = {
     owner: "/clinic/owners",
     patient: "/clinic/patients",
@@ -2067,6 +2311,10 @@ async function submitForm(form) {
     payment: "/clinic/payments",
     insuranceClaim: "/clinic/insurance-claims",
     wellnessPlan: "/clinic/wellness-plans",
+    portalAccount: "/clinic/portal-accounts",
+    portalDocument: "/clinic/portal-documents",
+    telemedicine: "/clinic/telemedicine-sessions",
+    asyncConsult: "/clinic/async-consults",
   };
   const created = await fetchJson(endpoints[type], {
     method: "POST",
@@ -2086,7 +2334,10 @@ async function submitForm(form) {
     type === "message" ||
     type === "invoice" ||
     type === "insuranceClaim" ||
-    type === "wellnessPlan"
+    type === "wellnessPlan" ||
+    type === "portalDocument" ||
+    type === "telemedicine" ||
+    type === "asyncConsult"
   )
     selectedPatientId = created.patientId;
   form.reset();
@@ -2110,6 +2361,13 @@ async function submitForm(form) {
     type === "wellnessPlan"
   )
     switchView("finance");
+  if (
+    type === "portalAccount" ||
+    type === "portalDocument" ||
+    type === "telemedicine" ||
+    type === "asyncConsult"
+  )
+    switchView("portal");
 }
 function bindForms() {
   document.querySelectorAll("form[data-form]").forEach((form) =>
@@ -2688,6 +2946,54 @@ function bindDetailForms() {
         });
         setStatus("Wellness plan saved.");
       }
+      if (form.dataset.detailForm === "portal-account-update") {
+        await fetchJson(`/clinic/portal-accounts/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            inviteStatus: data.inviteStatus,
+            preferredLanguage: data.preferredLanguage,
+            unreadMessages: Number(data.unreadMessages || 0),
+            paymentCardsOnFile: Number(data.paymentCardsOnFile || 0),
+          }),
+        });
+        setStatus("Portal account saved.");
+      }
+      if (form.dataset.detailForm === "portal-document-update") {
+        await fetchJson(`/clinic/portal-documents/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            sharedInPortal: data.sharedInPortal === "true",
+            qrEnabled: data.qrEnabled === "true",
+          }),
+        });
+        setStatus("Portal document saved.");
+      }
+      if (form.dataset.detailForm === "telemedicine-update") {
+        await fetchJson(`/clinic/telemedicine-sessions/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            bookingStatus: data.bookingStatus,
+            aiTriageStatus: data.aiTriageStatus,
+            recordingConsent: data.recordingConsent === "true",
+            note: data.note,
+          }),
+        });
+        setStatus("Telemedicine saved.");
+      }
+      if (form.dataset.detailForm === "async-consult-update") {
+        await fetchJson(`/clinic/async-consults/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: data.status,
+            photoCount: Number(data.photoCount || 0),
+            medicationReminderEnabled:
+              data.medicationReminderEnabled === "true",
+            triageRecommendation: data.triageRecommendation,
+          }),
+        });
+        setStatus("Async consult saved.");
+      }
       await render();
       const detailMap = {
         "owner-profile": "owner",
@@ -2715,6 +3021,10 @@ function bindDetailForms() {
         "payment-update": "payment",
         "insurance-claim-update": "insuranceClaim",
         "wellness-plan-update": "wellnessPlan",
+        "portal-account-update": "portalAccount",
+        "portal-document-update": "portalDocument",
+        "telemedicine-update": "telemedicine",
+        "async-consult-update": "asyncConsult",
         "visit-soap": "visit",
         "visit-procedure": "visit",
         "surgery-update": "surgery",
@@ -3025,6 +3335,45 @@ function renderFinance() {
   document.querySelector("#wellness-plan-list").innerHTML =
     `${recordCount(plans)}${plans.map(wellnessPlanRow).join("") || '<p class="muted">No wellness plans match the current search.</p>'}`;
 }
+function renderPortal() {
+  const summary = latestState.portalSummary;
+  if (!summary) return;
+  const accounts = filtered(latestState.portalAccounts);
+  const documents = filtered(latestState.portalDocuments);
+  const telemedicine = filtered(latestState.telemedicineSessions);
+  const asyncConsults = filtered(latestState.asyncConsults);
+  const alerts = filtered(summary.alerts);
+  document.querySelector("#portal-metrics").innerHTML = [
+    metric("Accounts", summary.counts.accounts),
+    metric("Documents", summary.counts.documents),
+    metric("Telemedicine", summary.counts.telemedicine),
+    metric("Async consults", summary.counts.asyncConsults),
+  ].join("");
+  document.querySelector("#portal-coverage").innerHTML = summary.featureCoverage
+    .map(
+      (coverage) =>
+        `<article class="card"><div class="badges"><span class="badge">${coverage.range}</span></div><h3>${coverage.area}</h3><p>${coverage.description}</p></article>`,
+    )
+    .join("");
+  document.querySelector("#portal-alerts").innerHTML =
+    alerts
+      .map((record) =>
+        record.loginMethod
+          ? portalAccountRow(record)
+          : record.sessionType
+            ? telemedicineRow(record)
+            : asyncConsultRow(record),
+      )
+      .join("") || '<p class="muted">No portal alerts.</p>';
+  document.querySelector("#portal-account-list").innerHTML =
+    `${recordCount(accounts)}${accounts.map(portalAccountRow).join("") || '<p class="muted">No portal accounts match the current search.</p>'}`;
+  document.querySelector("#portal-document-list").innerHTML =
+    `${recordCount(documents)}${documents.map(portalDocumentRow).join("") || '<p class="muted">No portal documents match the current search.</p>'}`;
+  document.querySelector("#telemedicine-list").innerHTML =
+    `${recordCount(telemedicine)}${telemedicine.map(telemedicineRow).join("") || '<p class="muted">No telemedicine sessions match the current search.</p>'}`;
+  document.querySelector("#async-consult-list").innerHTML =
+    `${recordCount(asyncConsults)}${asyncConsults.map(asyncConsultRow).join("") || '<p class="muted">No async consults match the current search.</p>'}`;
+}
 function renderAudit() {
   const events = filtered(latestState.auditEvents);
   document.querySelector("#audit-list").innerHTML =
@@ -3134,6 +3483,15 @@ function renderWorkQueue() {
         latestState.financeSummary.alerts.length,
       ),
     );
+  if (latestState.portalSummary?.alerts.length)
+    items.push(
+      queueItem(
+        "portal",
+        "Portal and telemedicine",
+        "Accept invites, share documents and close remote consult loops.",
+        latestState.portalSummary.alerts.length,
+      ),
+    );
   const count = items.length;
   document.querySelector("#queue-count").textContent = `${count} open`;
   document.querySelector("#work-queue").innerHTML =
@@ -3168,6 +3526,11 @@ async function render() {
     payments,
     insuranceClaims,
     wellnessPlans,
+    portalSummary,
+    portalAccounts,
+    portalDocuments,
+    telemedicineSessions,
+    asyncConsults,
     operationsSummary,
     appointments,
     clientMessages,
@@ -3198,6 +3561,11 @@ async function render() {
     fetchJson("/clinic/payments"),
     fetchJson("/clinic/insurance-claims"),
     fetchJson("/clinic/wellness-plans"),
+    fetchJson("/clinic/portal/summary"),
+    fetchJson("/clinic/portal-accounts"),
+    fetchJson("/clinic/portal-documents"),
+    fetchJson("/clinic/telemedicine-sessions"),
+    fetchJson("/clinic/async-consults"),
     fetchJson("/clinic/inventory/summary"),
     fetchJson("/clinic/inventory-items"),
     fetchJson("/clinic/purchase-orders"),
@@ -3237,6 +3605,11 @@ async function render() {
     payments: payments.items,
     insuranceClaims: insuranceClaims.items,
     wellnessPlans: wellnessPlans.items,
+    portalSummary,
+    portalAccounts: portalAccounts.items,
+    portalDocuments: portalDocuments.items,
+    telemedicineSessions: telemedicineSessions.items,
+    asyncConsults: asyncConsults.items,
     operationsSummary,
     appointments: appointments.items,
     clientMessages: clientMessages.items,
@@ -3324,6 +3697,26 @@ async function render() {
     latestState.patients,
     "name",
   );
+  fillSelect(
+    document.querySelector("#portal-document-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#telemedicine-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#async-consult-patient-options"),
+    latestState.patients,
+    "name",
+  );
+  fillSelect(
+    document.querySelector("#portal-owner-options"),
+    latestState.owners,
+    "displayName",
+  );
   fillVisitSelect(document.querySelector("#visit-options"), latestState.visits);
   fillVisitSelect(
     document.querySelector("#prescription-visit-options"),
@@ -3358,6 +3751,10 @@ async function render() {
     latestState.visits,
   );
   fillVisitSelect(
+    document.querySelector("#telemedicine-visit-options"),
+    latestState.visits,
+  );
+  fillVisitSelect(
     document.querySelector("#appointment-visit-options"),
     latestState.visits,
   );
@@ -3383,6 +3780,7 @@ async function render() {
     metric("Lab alerts", labSummary.alerts.length),
     metric("Inventory alerts", inventorySummary.alerts.length),
     metric("Finance alerts", financeSummary.alerts.length),
+    metric("Portal alerts", portalSummary.alerts.length),
     metric("Operations alerts", operationsSummary.alerts.length),
     metric("Specialty alerts", specialtySummary.alerts.length),
     metric("Audit events", auditEvents.items.length),
@@ -3404,6 +3802,7 @@ async function render() {
   renderLabs();
   renderInventory();
   renderFinance();
+  renderPortal();
   renderOperations();
   renderSpecialties();
   renderAudit();
